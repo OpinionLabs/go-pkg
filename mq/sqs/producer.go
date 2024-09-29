@@ -1,15 +1,14 @@
-package sns
+package sqs
 
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sns"
+	"github.com/aws/aws-sdk-go/service/sqs"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"github.com/ChewZ-life/go-pkg/mq/channel"
@@ -26,32 +25,21 @@ type keyValueReq struct {
 	errCh chan error
 }
 
-// SNSConfig aws sns相关配置
-type SNSConfig struct {
-	ARN           string `mapstructure:"arn" json:"arn"`                       // topic的arn
-	Region        string `mapstructure:"region" json:"region"`                 // 队列服务所属区域
-	APIKey        string `mapstructure:"api_key" json:"api_key"`               // api key
-	SecretKey     string `mapstructure:"secret_key" json:"secret_key"`         // secret key
-	ProducerCnt   int    `mapstructure:"producer_cnt" json:"producer_cnt"`     // 生产者
-}
-
 // Producer 生产者
 type Producer struct {
-	config   SNSConfig             // 配置
+	config   SQSConfig             // 配置
 	logger   *log.Log            // 日志
 	msgChans map[int]chan interface{} // 接收消息
-	isFifo   bool
 }
 
-func NewProducer(snsConfig SNSConfig, logger *log.Log) *Producer {
+func NewProducer(sqsConfig SQSConfig, logger *log.Log) *Producer {
 	p := &Producer{
-		config:   snsConfig,
+		config:   sqsConfig,
 		logger:   logger,
 		msgChans: map[int]chan interface{}{},
-		isFifo:   strings.HasSuffix(snsConfig.ARN, ".fifo"),
 	}
 
-	for i := 0; i < snsConfig.ProducerCnt; i++ {
+	for i := 0; i < sqsConfig.ProducerCnt; i++ {
 		p.msgChans[i] = make(chan interface{})
 		keyValueCh := channel.NoBlock(p.msgChans[i])
 		go func(i int, keyValueCh chan interface{}) {
@@ -74,10 +62,10 @@ func (p *Producer) Pub(key, value string) error {
 }
 
 func (p *Producer) processMessages(i int, keyValueCh chan interface{}) {
-	p.logger.Infof("sns Producer.processMessages start. task_id:%d", i)
+	p.logger.Infof("sqs Producer.processMessages start. task_id:%d", i)
 
 	var cfgSession *session.Session
-	var service *sns.SNS
+	var service *sqs.SQS
 	var err error
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
@@ -95,14 +83,14 @@ func (p *Producer) processMessages(i int, keyValueCh chan interface{}) {
 				}
 				cfgSession, err = session.NewSession(cfg)
 				if err != nil {
-					err = errors.Wrap(err, "sns Producer.processMessages session")
-					p.logger.ErrorWithFields("sns Producer.processMessages session", log.Fields{"err": err.Error()})
+					err = errors.Wrap(err, "sqs Producer.processMessages session")
+					p.logger.ErrorWithFields("sqs Producer.processMessages session", log.Fields{"err": err.Error()})
 					return
 				}
 			}
 
 			if service == nil {
-				service = sns.New(cfgSession)
+				service = sqs.New(cfgSession)
 			}
 
 			var msgData []byte
@@ -118,35 +106,31 @@ func (p *Producer) processMessages(i int, keyValueCh chan interface{}) {
 			}
 			msgData, err = json.Marshal(msgInfo)
 			if err != nil {
-				err = errors.Wrap(err, "sns Producer.processMessages marshal")
-				p.logger.ErrorWithFields("sns Producer.processMessages marshal", log.Fields{"err": err.Error()})
+				err = errors.Wrap(err, "sqs Producer.processMessages marshal")
+				p.logger.ErrorWithFields("sqs Producer.processMessages marshal", log.Fields{"err": err.Error()})
 				return
 			}
 
 			tp := time.Now()
 
-			const waitSeconds = 3
+			const waitSeconds = 5
 			ctx, cancel := context.WithTimeout(context.Background(), waitSeconds*time.Second)
 			defer cancel()
-			input := &sns.PublishInput{
-				Message:  aws.String(string(msgData)),
-				TopicArn: aws.String(p.config.ARN),
+			input := &sqs.SendMessageInput{
+        		QueueUrl: aws.String(p.config.QueueUrl),
+        		MessageBody: aws.String(string(msgData)),
 			}
-			if p.isFifo {
-				msgKey := msg.(keyValueReq).key
-				input.MessageGroupId = aws.String(msgKey)
-			}
-			_, err := service.PublishWithContext(ctx, input)
+			_, err := service.SendMessageWithContext(ctx, input)
 			if err != nil {
-				err = errors.Wrap(err, "sns Producer.processMessages send")
-				p.logger.ErrorWithFields("sns Producer.processMessages send", log.Fields{"snsArn": p.config.ARN, "err": err.Error()})
+				err = errors.Wrap(err, "sqs Producer.processMessages send")
+				p.logger.ErrorWithFields("sqs Producer.processMessages send", log.Fields{"snsArn": p.config.ARN, "err": err.Error()})
 				return
 			}
-			// fmt.Println("Message ID:", *result.MessageId)
+			// fmt.Println("sqs Message ID:", *result.MessageId)
 
 			cost := time.Since(tp).Milliseconds()
 			if cost > TimeoutMS {
-				p.logger.ErrorWithFields("sqs SNS.processMessages handle msg cost.", log.Fields{"sqsArn": p.config.ARN, "cost":cost})
+				p.logger.ErrorWithFields("sqs processMessages handle msg cost.", log.Fields{"sqsArn": p.config.ARN, "cost":cost})
 			}
 			p.logger.Infof("sqs Producer.processMessages pub end. msg:%s \n", string(msgData))
 		}()
