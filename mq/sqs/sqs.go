@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
-	"code.zmatrix.cn/prediction/mq/utils/log"
+	"github.com/ChewZ-life/go-pkg/mq/utils/log"
 )
 
 const (

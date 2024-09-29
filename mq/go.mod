@@ -1,4 +1,4 @@
-module code.zmatrix.cn/prediction/mq
+module github.com/ChewZ-life/go-pkg/mq
 
 go 1.21.5
 

@@ -5,10 +5,10 @@ import (
 	"time"
 	"encoding/json"
 
-	"code.zmatrix.cn/prediction/mq/utils/log"
-	"code.zmatrix.cn/prediction/mq/sqs"
-	"code.zmatrix.cn/prediction/mq/sns"
-	"code.zmatrix.cn/prediction/mq/proto"
+	"github.com/ChewZ-life/go-pkg/mq/utils/log"
+	"github.com/ChewZ-life/go-pkg/mq/sqs"
+	"github.com/ChewZ-life/go-pkg/mq/sns"
+	"github.com/ChewZ-life/go-pkg/mq/proto"
 )
 
 // 定义结构体与字段 for test
