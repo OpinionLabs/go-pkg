@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ChewZ-life/go-pkg/mq/channel"
+	"github.com/ChewZ-life/go-pkg/mq/utils/log"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
-	"github.com/ChewZ-life/go-pkg/mq/channel"
-	"github.com/ChewZ-life/go-pkg/mq/utils/log"
 )
 
 const (
@@ -27,8 +27,8 @@ type keyValueReq struct {
 
 // Producer 生产者
 type Producer struct {
-	config   SQSConfig             // 配置
-	logger   *log.Log            // 日志
+	config   SQSConfig                // 配置
+	logger   *log.Log                 // 日志
 	msgChans map[int]chan interface{} // 接收消息
 }
 
@@ -117,8 +117,9 @@ func (p *Producer) processMessages(i int, keyValueCh chan interface{}) {
 			ctx, cancel := context.WithTimeout(context.Background(), waitSeconds*time.Second)
 			defer cancel()
 			input := &sqs.SendMessageInput{
-        		QueueUrl: aws.String(p.config.QueueUrl),
-        		MessageBody: aws.String(string(msgData)),
+				QueueUrl:       aws.String(p.config.QueueUrl),
+				MessageGroupId: p.config.MessageGroupId,
+				MessageBody:    aws.String(string(msgData)),
 			}
 			_, err := service.SendMessageWithContext(ctx, input)
 			if err != nil {
@@ -130,7 +131,7 @@ func (p *Producer) processMessages(i int, keyValueCh chan interface{}) {
 
 			cost := time.Since(tp).Milliseconds()
 			if cost > TimeoutMS {
-				p.logger.ErrorWithFields("sqs processMessages handle msg cost.", log.Fields{"sqsArn": p.config.ARN, "cost":cost})
+				p.logger.ErrorWithFields("sqs processMessages handle msg cost.", log.Fields{"sqsArn": p.config.ARN, "cost": cost})
 			}
 			p.logger.Infof("sqs Producer.processMessages pub end. msg:%s \n", string(msgData))
 		}()

@@ -4,40 +4,40 @@ import (
 	"context"
 	"time"
 
+	"github.com/ChewZ-life/go-pkg/mq/utils/log"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
-	"github.com/ChewZ-life/go-pkg/mq/utils/log"
 )
 
 const (
 	HandleTimeoutMS = int64(1000)
 )
 
-// MessageCB 
+// MessageCB
 type MessageCB func(msg string) error
 
 // SQS aws sqs封装
 type SQS struct {
-	config      SQSConfig // 配置
-	logger      *log.Log  // 日志
-	messageCB   MessageCB    // 回调
+	config    SQSConfig // 配置
+	logger    *log.Log  // 日志
+	messageCB MessageCB // 回调
 }
 
 // SQSConfig aws sqs相关配置
 type SQSConfig struct {
-	ARN           string `mapstructure:"arn" json:"arn"`                       // topic的arn
-	Region        string `mapstructure:"region" json:"region"`                 // 队列服务所属区域
-	APIKey        string `mapstructure:"api_key" json:"api_key"`               // api key
-	SecretKey     string `mapstructure:"secret_key" json:"secret_key"`         // secret key
-	QueueUrl      string `mapstructure:"queue_url" json:"queue_url"`           // 队列地址
-	ConsumerCnt   int    `mapstructure:"consumer_cnt" json:"consumer_cnt"`     // 消费者数量
-	ProducerCnt   int    `mapstructure:"producer_cnt" json:"producer_cnt"`     // 生产者
+	ARN            string  `mapstructure:"arn" json:"arn"`               // topic的arn
+	Region         string  `mapstructure:"region" json:"region"`         // 队列服务所属区域
+	APIKey         string  `mapstructure:"api_key" json:"api_key"`       // api key
+	SecretKey      string  `mapstructure:"secret_key" json:"secret_key"` // secret key
+	QueueUrl       string  `mapstructure:"queue_url" json:"queue_url"`   // 队列地址
+	MessageGroupId *string `mapstructure:"message_group_id" json:"message_group_id"`
+	ConsumerCnt    int     `mapstructure:"consumer_cnt" json:"consumer_cnt"` // 消费者数量
+	ProducerCnt    int     `mapstructure:"producer_cnt" json:"producer_cnt"` // 生产者
 }
-
 
 // 处理sns->sqs的消息
 func NewSQS(sqsConfig SQSConfig, logger *log.Log, messageCB MessageCB) *SQS {
@@ -135,7 +135,7 @@ func (s *SQS) processMessages(i int) {
 						Id:            msg.MessageId,
 						ReceiptHandle: msg.ReceiptHandle,
 					})
-					s.logger.ErrorWithFields("sqs SQS.processMessages unmarshal raw message fail.", log.Fields{"err": err.Error(), "msg":*msg.Body})
+					s.logger.ErrorWithFields("sqs SQS.processMessages unmarshal raw message fail.", log.Fields{"err": err.Error(), "msg": *msg.Body})
 					continue
 				}
 
@@ -144,12 +144,12 @@ func (s *SQS) processMessages(i int) {
 					tp := time.Now()
 					err = s.messageCB(rawMessage.Message)
 					if err != nil {
-						s.logger.ErrorWithFields("sqs SQS.processMessages handle msg fail.", log.Fields{"err": err.Error(), "msg":rawMessage.Message})
+						s.logger.ErrorWithFields("sqs SQS.processMessages handle msg fail.", log.Fields{"err": err.Error(), "msg": rawMessage.Message})
 						continue
 					}
 					cost := time.Since(tp).Milliseconds()
 					if cost > HandleTimeoutMS {
-						s.logger.ErrorWithFields("sqs SQS.processMessages handle msg cost.", log.Fields{"sqsArn": s.config.ARN, "cost":cost})
+						s.logger.ErrorWithFields("sqs SQS.processMessages handle msg cost.", log.Fields{"sqsArn": s.config.ARN, "cost": cost})
 					}
 					// 回调成功后删除消息
 					deleteEntries = append(deleteEntries, &sqs.DeleteMessageBatchRequestEntry{
@@ -179,7 +179,6 @@ func (s *SQS) processMessages(i int) {
 		}()
 	}
 }
-
 
 func (s *SQS) processMessagesV1(i int) {
 	s.logger.Infof("sqs SQS.processMessagesV1 start. task_id:%d", i)
@@ -241,12 +240,12 @@ func (s *SQS) processMessagesV1(i int) {
 					tp := time.Now()
 					err = s.messageCB(*msg.Body)
 					if err != nil {
-						s.logger.ErrorWithFields("sqs SQS.processMessagesV1 handle msg fail.", log.Fields{"err": err.Error(), "msg":*msg.Body})
+						s.logger.ErrorWithFields("sqs SQS.processMessagesV1 handle msg fail.", log.Fields{"err": err.Error(), "msg": *msg.Body})
 						continue
 					}
 					cost := time.Since(tp).Milliseconds()
 					if cost > HandleTimeoutMS {
-						s.logger.ErrorWithFields("sqs SQS.processMessagesV1 handle msg cost.", log.Fields{"sqsArn": s.config.ARN, "cost":cost})
+						s.logger.ErrorWithFields("sqs SQS.processMessagesV1 handle msg cost.", log.Fields{"sqsArn": s.config.ARN, "cost": cost})
 					}
 					// 回调成功后删除消息
 					deleteEntries = append(deleteEntries, &sqs.DeleteMessageBatchRequestEntry{
@@ -276,4 +275,3 @@ func (s *SQS) processMessagesV1(i int) {
 		}()
 	}
 }
-
