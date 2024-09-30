@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"crypto/md5"
+	"strconv"
 
 	"github.com/ChewZ-life/go-pkg/mq/channel"
 	"github.com/ChewZ-life/go-pkg/mq/utils/log"
@@ -50,8 +52,14 @@ func NewProducer(sqsConfig SQSConfig, logger *log.Log) *Producer {
 	return p
 }
 
+func (p *Producer) GetUserShard(key string) int {
+	md5str1 := fmt.Sprintf("%x", md5.Sum([]byte(key)))
+	ret, _ := strconv.ParseInt(md5str1[22:], 16, 0)
+	return int(ret % int64(p.config.ProducerCnt))
+}
+
 func (p *Producer) Pub(key, value string) error {
-	shard := 0 // 后续需要再处理-rogan
+	shard := p.GetUserShard(key)
 	errCh := make(chan error)
 	p.msgChans[shard] <- keyValueReq{
 		key:   key,
