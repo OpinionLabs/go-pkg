@@ -2,20 +2,20 @@ package sns
 
 import (
 	"context"
+	"crypto/md5"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
-	"crypto/md5"
-	"strconv"
-	
+
+	"github.com/ChewZ-life/go-pkg/mq/channel"
+	"github.com/ChewZ-life/go-pkg/mq/utils/log"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
-	"github.com/ChewZ-life/go-pkg/mq/channel"
-	"github.com/ChewZ-life/go-pkg/mq/utils/log"
 )
 
 const (
@@ -30,17 +30,17 @@ type keyValueReq struct {
 
 // SNSConfig aws sns相关配置
 type SNSConfig struct {
-	ARN           string `mapstructure:"arn" json:"arn"`                       // topic的arn
-	Region        string `mapstructure:"region" json:"region"`                 // 队列服务所属区域
-	APIKey        string `mapstructure:"api_key" json:"api_key"`               // api key
-	SecretKey     string `mapstructure:"secret_key" json:"secret_key"`         // secret key
-	ProducerCnt   int    `mapstructure:"producer_cnt" json:"producer_cnt"`     // 生产者
+	ARN         string `mapstructure:"arn" json:"arn"`                   // topic的arn
+	Region      string `mapstructure:"region" json:"region"`             // 队列服务所属区域
+	APIKey      string `mapstructure:"api_key" json:"api_key"`           // api key
+	SecretKey   string `mapstructure:"secret_key" json:"secret_key"`     // secret key
+	ProducerCnt int    `mapstructure:"producer_cnt" json:"producer_cnt"` // 生产者
 }
 
 // Producer 生产者
 type Producer struct {
-	config   SNSConfig             // 配置
-	logger   *log.Log            // 日志
+	config   SNSConfig                // 配置
+	logger   *log.Log                 // 日志
 	msgChans map[int]chan interface{} // 接收消息
 	isFifo   bool
 }
@@ -96,11 +96,19 @@ func (p *Producer) processMessages(i int, keyValueCh chan interface{}) {
 			defer func() { msg.(keyValueReq).errCh <- err }()
 
 			if cfgSession == nil {
-				cfg := &aws.Config{
-					Region: aws.String(p.config.Region),
-					Credentials: credentials.NewStaticCredentials(
-						p.config.APIKey, p.config.SecretKey, ""),
+				cfg := new(aws.Config)
+				if p.config.APIKey != "" && p.config.SecretKey != "" {
+					cfg = &aws.Config{
+						Region: aws.String(p.config.Region),
+						Credentials: credentials.NewStaticCredentials(
+							p.config.APIKey, p.config.SecretKey, ""),
+					}
+				} else {
+					cfg = &aws.Config{
+						Region: aws.String(p.config.Region),
+					}
 				}
+
 				cfgSession, err = session.NewSession(cfg)
 				if err != nil {
 					err = errors.Wrap(err, "sns Producer.processMessages session")
@@ -154,7 +162,7 @@ func (p *Producer) processMessages(i int, keyValueCh chan interface{}) {
 
 			cost := time.Since(tp).Milliseconds()
 			if cost > TimeoutMS {
-				p.logger.ErrorWithFields("sqs SNS.processMessages handle msg cost.", log.Fields{"sqsArn": p.config.ARN, "cost":cost})
+				p.logger.ErrorWithFields("sqs SNS.processMessages handle msg cost.", log.Fields{"sqsArn": p.config.ARN, "cost": cost})
 			}
 			p.logger.Infof("sqs Producer.processMessages pub end. msg:%s \n", string(msgData))
 		}()
