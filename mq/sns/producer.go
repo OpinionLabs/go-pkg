@@ -164,7 +164,7 @@ func (p *Producer) processMessages(i int, keyValueCh chan interface{}) {
 			if cost > TimeoutMS {
 				p.logger.ErrorWithFields("sqs SNS.processMessages handle msg cost.", log.Fields{"sqsArn": p.config.ARN, "cost": cost})
 			}
-			p.logger.Infof("sqs Producer.processMessages pub end. msg:%s \n", string(msgData))
+			// p.logger.Infof("sqs Producer.processMessages pub end. msg:%s \n", string(msgData))
 		}()
 	}
 }
