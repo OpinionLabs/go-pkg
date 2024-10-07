@@ -197,10 +197,17 @@ func (s *SQS) processMessagesV1(i int) {
 	for {
 		func() {
 			if cfgSession == nil {
-				cfg := &aws.Config{
-					Region: aws.String(s.config.Region),
-					Credentials: credentials.NewStaticCredentials(
-						s.config.APIKey, s.config.SecretKey, ""),
+				cfg := new(aws.Config)
+				if s.config.APIKey != "" && s.config.SecretKey != "" {
+					cfg = &aws.Config{
+						Region: aws.String(s.config.Region),
+						Credentials: credentials.NewStaticCredentials(
+							s.config.APIKey, s.config.SecretKey, ""),
+					}
+				} else {
+					cfg = &aws.Config{
+						Region: aws.String(s.config.Region),
+					}
 				}
 				cfgSession, err = session.NewSession(cfg)
 				if err != nil {
