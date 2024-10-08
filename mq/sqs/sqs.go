@@ -243,12 +243,16 @@ func (s *SQS) processMessagesV1(i int) {
 				return
 			}
 
+			s.logger.InfoWithFields("sqs SQS.processMessagesV1 received messages", log.Fields{"len": len(msgResult.Messages)})
+
 			// 处理消息
 			var deleteEntries []*sqs.DeleteMessageBatchRequestEntry
-			for _, msg := range msgResult.Messages {
+			for i, msg := range msgResult.Messages {
 				if msg.Body == nil {
 					continue
 				}
+
+				s.logger.InfoWithFields("sqs SQS.processMessagesV1 handle message", log.Fields{"index": i, "msg": *msg})
 
 				// 结果的回调
 				if s.messageCB != nil {
