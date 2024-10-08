@@ -84,10 +84,17 @@ func (p *Producer) processMessages(i int, keyValueCh chan interface{}) {
 			defer func() { msg.(keyValueReq).errCh <- err }()
 
 			if cfgSession == nil {
-				cfg := &aws.Config{
-					Region: aws.String(p.config.Region),
-					Credentials: credentials.NewStaticCredentials(
-						p.config.APIKey, p.config.SecretKey, ""),
+				cfg := new(aws.Config)
+				if p.config.APIKey != "" && p.config.SecretKey != "" {
+					cfg = &aws.Config{
+						Region: aws.String(p.config.Region),
+						Credentials: credentials.NewStaticCredentials(
+							p.config.APIKey, p.config.SecretKey, ""),
+					}
+				} else {
+					cfg = &aws.Config{
+						Region: aws.String(p.config.Region),
+					}
 				}
 				cfgSession, err = session.NewSession(cfg)
 				if err != nil {
