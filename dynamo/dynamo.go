@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -138,7 +137,9 @@ func NewDynamo[T any](cfg Config) Dynamo[T] {
 		}
 		d.svc = dynamodb.NewFromConfig(awsCfg, func(options *dynamodb.Options) {
 			options.Region = cfg.Region
-			options.Credentials = credentials.NewStaticCredentialsProvider(cfg.APIKey, cfg.SecretKey, cfg.Session)
+			if cfg.APIKey != "" &&  cfg.SecretKey != "" {
+				options.Credentials = credentials.NewStaticCredentialsProvider(cfg.APIKey, cfg.SecretKey, cfg.Session)
+			}
 			options.DefaultsMode = aws.DefaultsModeStandard
 			options.Logger = logging.NewStandardLogger(logFile)
 			if cfg.Endpoint != "" {
@@ -237,7 +238,6 @@ func (d *dynamo[T]) DeleteTable(ctx context.Context, input *dynamodb.DeleteTable
 func (d *dynamo[T]) ScanTable(ctx context.Context, fromKey any, limit int) (items []T, lastKey any, err error) {
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
-		tp := time.Now()
 		items, lastKey, err = d.scan(ctx, "", fromKey, limit)
 		doneCh <- struct{}{}
 	})
@@ -248,7 +248,6 @@ func (d *dynamo[T]) ScanTable(ctx context.Context, fromKey any, limit int) (item
 func (d *dynamo[T]) ScanIndex(ctx context.Context, index string, fromKey any, limit int) (items []T, lastKey any, err error) {
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
-		tp := time.Now()
 		items, lastKey, err = d.scan(ctx, index, fromKey, limit)
 		doneCh <- struct{}{}
 	})
@@ -277,7 +276,6 @@ func (d *dynamo[T]) QueryItem(ctx context.Context, key map[string]any) (exist bo
 			ret.Err = errors.Wrap(err, "QueryItem marshal")
 			return
 		}
-		tp := time.Now()
 		res, err := d.svc.GetItem(ctx, &dynamodb.GetItemInput{
 			ConsistentRead: aws.Bool(true),
 			TableName:      aws.String(d.cfg.TableName),
@@ -306,7 +304,6 @@ func (d *dynamo[T]) QueryItem(ctx context.Context, key map[string]any) (exist bo
 func (d *dynamo[T]) QueryItems(ctx context.Context, index, condition string, expression map[string]any, fromKey any, limit int) (items []T, lastKey any, err error) {
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
-		tp := time.Now()
 		items, lastKey, err = d.queryItems(ctx, index, condition, expression, fromKey, limit)
 		doneCh <- struct{}{}
 	})
@@ -393,7 +390,6 @@ func (d *dynamo[T]) QueryItemWithTable(ctx context.Context, key map[string]any, 
 			ret.Err = errors.Wrap(err, "QueryItem marshal")
 			return
 		}
-		tp := time.Now()
 		res, err := d.svc.GetItem(ctx, &dynamodb.GetItemInput{
 			ConsistentRead: aws.Bool(true),
 			TableName:      &table,
@@ -422,7 +418,6 @@ func (d *dynamo[T]) QueryItemWithTable(ctx context.Context, key map[string]any, 
 func (d *dynamo[T]) QueryItemsWithTable(ctx context.Context, qcs QueryItemCondition) (items []T, lastKey any, err error) {
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
-		tp := time.Now()
 		items, lastKey, err = d.queryItemsWithTable(ctx, qcs)
 		doneCh <- struct{}{}
 	})
@@ -516,7 +511,6 @@ func (d *dynamo[T]) InsertItems(ctx context.Context, insertInfos []InsertInfo[T]
 		if end > len(insertInfos) {
 			end = len(insertInfos)
 		}
-		tp := time.Now()
 		err = d.insertItems(ctx, insertInfos[start:end])
 		if err != nil {
 			return err
@@ -568,7 +562,6 @@ func (d *dynamo[T]) TxInsertItems(ctx context.Context, insertInfos []TxInsertInf
 		for _, opt := range opts {
 			opt.apply(&optsIn)
 		}
-		tp := time.Now()
 		err := d.txInsertItems(ctx, insertInfos, optsIn)
 		if err != nil {
 			errCh <- errors.Wrap(err, "TxInsertItems insert fail")
@@ -649,7 +642,6 @@ func (d *dynamo[T]) TxRawExec(ctx context.Context, insertItems []TxRawInsert, up
 		for _, opt := range opts {
 			opt.apply(&optsIn)
 		}
-		tp := time.Now()
 		err := d.txRawExec(ctx, insertItems, updateItems, optsIn)
 		if err != nil {
 			errCh <- errors.Wrap(err, "TxRawExec insert fail")
@@ -749,7 +741,6 @@ func (d *dynamo[T]) DeleteItems(ctx context.Context, keys []map[string]any) (err
 				},
 			})
 		}
-		tp := time.Now()
 		err := d.batchWriteItemWithRetry(ctx, map[string][]types.WriteRequest{
 			d.cfg.TableName: requests,
 		})
@@ -798,7 +789,6 @@ func (d *dynamo[T]) UpdateItem(ctx context.Context, update UpdateInfo) (err erro
 		if conditionExpression != "" {
 			updateInput.ConditionExpression = aws.String(conditionExpression)
 		}
-		tp := time.Now()
 		_, err = d.svc.UpdateItem(ctx, updateInput)
 		if err != nil {
 			errCh <- errors.Wrap(err, "UpdateItem update item")
@@ -863,7 +853,6 @@ func (d *dynamo[T]) TxUpdateItems(ctx context.Context, updates []UpdateInfo, opt
 		for _, opt := range opts {
 			opt.apply(&optsIn)
 		}
-		tp := time.Now()
 		err := d.txUpdateItems(ctx, updates, optsIn)
 		if err != nil {
 			errCh <- errors.Wrap(err, "TxUpdateItems update fail")

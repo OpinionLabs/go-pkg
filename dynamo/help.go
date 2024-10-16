@@ -5,11 +5,11 @@ import (
 	"math"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/ChewZ-life/go-pkg/concurrency/go_pool"
 )
+
+const MIN = 0.0000000001
 
 const (
 	TimeoutMS = int64(3000)

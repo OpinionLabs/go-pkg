@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -148,9 +147,7 @@ func (d *streams) listStreams(ctx context.Context, fromKey any, limit int) (item
 func (d *streams) ListStreams(ctx context.Context, fromKey any, limit int) (items []Stream, lastKey any, err error) {
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
-		tp := time.Now()
 		items, lastKey, err = d.listStreams(ctx, fromKey, limit)
-		ReportErr(d.cfg.TableName, "ListStreams", tp, err)
 		doneCh <- struct{}{}
 	})
 	<-doneCh
@@ -219,9 +216,7 @@ func (d *streams) describeStream(ctx context.Context, streamArn string, fromKey 
 func (d *streams) DescribeStream(ctx context.Context, streamArn string, fromKey any, limit int) (items []StreamDescription, lastKey any, err error) {
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
-		tp := time.Now()
 		items, lastKey, err = d.describeStream(ctx, streamArn, fromKey, limit)
-		ReportErr(d.cfg.TableName, "DescribeStream", tp, err)
 		doneCh <- struct{}{}
 	})
 	<-doneCh
@@ -250,9 +245,7 @@ func (d *streams) getShardIterator(ctx context.Context, iteratorPut ShardIterato
 func (d *streams) GetShardIterator(ctx context.Context, iteratorPut ShardIterator) (shardIterator any, err error) {
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
-		tp := time.Now()
 		shardIterator, err = d.getShardIterator(ctx, iteratorPut)
-		ReportErr(d.cfg.TableName, "GetShardIterator", tp, err)
 		doneCh <- struct{}{}
 	})
 	<-doneCh
@@ -298,9 +291,7 @@ func (d *streams) getRecords(ctx context.Context, shardIterator any, limit int) 
 func (d *streams) GetRecords(ctx context.Context, shardIterator any, limit int) (items []any, err error) {
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
-		tp := time.Now()
 		items, err = d.getRecords(ctx, shardIterator, limit)
-		ReportErr(d.cfg.TableName, "GetRecords", tp, err)
 		doneCh <- struct{}{}
 	})
 	<-doneCh
