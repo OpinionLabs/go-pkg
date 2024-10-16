@@ -8,16 +8,15 @@ import (
 )
 
 type Item struct {
-	OrderID  int64  `dynamodbav:"order_id"`
-	UserID   int64  `dynamodbav:"user_id"`
-	NumAttr1 int    `dynamodbav:"num_attr1"`
-	NumAttr2 int    `dynamodbav:"num_attr2"`
-	StrAttr1 string `dynamodbav:"str_attr1"`
-	StrAttr2 string `dynamodbav:"str_attr2"`
+        WalletUser    string `json:"wallet_user"`
+        Points    	  int    `json:"points"`
+        Version       int    `json:"version"`
+        UpdateTime    string `json:"update_time"`
 }
 
+
 func main() {
-	tableName := "tb_test"
+	tableName := "test"
 	cfg := dynamo.Config{
 		Region:    "ap-southeast-1",
 		APIKey:    "",
@@ -29,18 +28,18 @@ func main() {
 	insertInfos := []dynamo.TxInsertInfo[Item]{
 		{
 			Item: Item{
-				OrderID:  123,
-				UserID:   234,
-				NumAttr1: 11,
-				StrAttr1: "aa",
+				Points:  123,
+				WalletUser:   "abcdefg",
+				UpdateTime: 11111,
+				Version: 1,
 			},
 		},
 		{
 			Item: Item{
-				OrderID:  321,
-				UserID:   432,
-				NumAttr2: 11,
-				StrAttr2: "aa",
+				Points:  456,
+				WalletUser:   "hijklmn",
+				UpdateTime: 22222,
+				Version: 2,
 			},
 		},
 	}

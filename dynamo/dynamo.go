@@ -235,12 +235,10 @@ func (d *dynamo[T]) DeleteTable(ctx context.Context, input *dynamodb.DeleteTable
 }
 
 func (d *dynamo[T]) ScanTable(ctx context.Context, fromKey any, limit int) (items []T, lastKey any, err error) {
-	ReportIfPoolFull(d.pool, d.cfg.TableName, "ScanTable")
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
 		tp := time.Now()
 		items, lastKey, err = d.scan(ctx, "", fromKey, limit)
-		ReportErr(d.cfg.TableName, "ScanTable", tp, err)
 		doneCh <- struct{}{}
 	})
 	<-doneCh
@@ -248,12 +246,10 @@ func (d *dynamo[T]) ScanTable(ctx context.Context, fromKey any, limit int) (item
 }
 
 func (d *dynamo[T]) ScanIndex(ctx context.Context, index string, fromKey any, limit int) (items []T, lastKey any, err error) {
-	ReportIfPoolFull(d.pool, d.cfg.TableName, "ScanIndex")
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
 		tp := time.Now()
 		items, lastKey, err = d.scan(ctx, index, fromKey, limit)
-		ReportErr(d.cfg.TableName, "ScanIndex", tp, err)
 		doneCh <- struct{}{}
 	})
 	<-doneCh
@@ -261,7 +257,6 @@ func (d *dynamo[T]) ScanIndex(ctx context.Context, index string, fromKey any, li
 }
 
 func (d *dynamo[T]) QueryItem(ctx context.Context, key map[string]any) (exist bool, retItem T, err error) {
-	ReportIfPoolFull(d.pool, d.cfg.TableName, "QueryItem")
 	retCh := make(chan struct {
 		Exist   bool
 		RetItem T
@@ -288,7 +283,6 @@ func (d *dynamo[T]) QueryItem(ctx context.Context, key map[string]any) (exist bo
 			TableName:      aws.String(d.cfg.TableName),
 			Key:            keyData,
 		})
-		ReportErr(d.cfg.TableName, "QueryItem", tp, err)
 		if err != nil {
 			ret.Err = errors.Wrap(err, "QueryItem getItem")
 			return
@@ -310,12 +304,10 @@ func (d *dynamo[T]) QueryItem(ctx context.Context, key map[string]any) (exist bo
 }
 
 func (d *dynamo[T]) QueryItems(ctx context.Context, index, condition string, expression map[string]any, fromKey any, limit int) (items []T, lastKey any, err error) {
-	ReportIfPoolFull(d.pool, d.cfg.TableName, "QueryItems")
 	doneCh := make(chan struct{})
 	d.pool.New(func() {
 		tp := time.Now()
 		items, lastKey, err = d.queryItems(ctx, index, condition, expression, fromKey, limit)
-		ReportErr(d.cfg.TableName, "QueryItems", tp, err)
 		doneCh <- struct{}{}
 	})
 	<-doneCh
@@ -407,7 +399,6 @@ func (d *dynamo[T]) QueryItemWithTable(ctx context.Context, key map[string]any, 
 			TableName:      &table,
 			Key:            keyData,
 		})
-		ReportErr(d.cfg.TableName, "QueryItem", tp, err)
 		if err != nil {
 			ret.Err = errors.Wrap(err, "QueryItem getItem")
 			return
@@ -433,7 +424,6 @@ func (d *dynamo[T]) QueryItemsWithTable(ctx context.Context, qcs QueryItemCondit
 	d.pool.New(func() {
 		tp := time.Now()
 		items, lastKey, err = d.queryItemsWithTable(ctx, qcs)
-		ReportErr(d.cfg.TableName, "QueryItems", tp, err)
 		doneCh <- struct{}{}
 	})
 	<-doneCh
@@ -528,7 +518,6 @@ func (d *dynamo[T]) InsertItems(ctx context.Context, insertInfos []InsertInfo[T]
 		}
 		tp := time.Now()
 		err = d.insertItems(ctx, insertInfos[start:end])
-		ReportErr(d.cfg.TableName, "InsertItems", tp, err)
 		if err != nil {
 			return err
 		}
@@ -540,7 +529,6 @@ func (d *dynamo[T]) insertItems(ctx context.Context, insertInfos []InsertInfo[T]
 	if len(insertInfos) == 0 {
 		return
 	}
-	ReportIfPoolFull(d.pool, d.cfg.TableName, "insertItems")
 	errCh := make(chan error)
 	d.pool.New(func() {
 		var requests []types.WriteRequest
@@ -571,7 +559,6 @@ func (d *dynamo[T]) insertItems(ctx context.Context, insertInfos []InsertInfo[T]
 
 // insertInfos 不能超过100个，否则dynamodb会报错
 func (d *dynamo[T]) TxInsertItems(ctx context.Context, insertInfos []TxInsertInfo[T], opts ...Option) (err error) {
-	ReportIfPoolFull(d.pool, d.cfg.TableName, "TxInsertItems")
 	if len(insertInfos) > 100 {
 		return errors.New("insertInfos must have length less than or equal to 100")
 	}
@@ -583,7 +570,6 @@ func (d *dynamo[T]) TxInsertItems(ctx context.Context, insertInfos []TxInsertInf
 		}
 		tp := time.Now()
 		err := d.txInsertItems(ctx, insertInfos, optsIn)
-		ReportErr(d.cfg.TableName, "TxInsertItems", tp, err)
 		if err != nil {
 			errCh <- errors.Wrap(err, "TxInsertItems insert fail")
 			return
@@ -654,7 +640,6 @@ func (d *dynamo[T]) txInsertItems(ctx context.Context, insertInfos []TxInsertInf
 
 // insertItems和updateItems 数量总和不能超过100个，否则dynamodb会报错
 func (d *dynamo[T]) TxRawExec(ctx context.Context, insertItems []TxRawInsert, updateItems []TxRawUpdate, opts ...Option) (err error) {
-	ReportIfPoolFull(d.pool, d.cfg.TableName, "TxRawExec")
 	if len(insertItems)+len(updateItems) > 100 {
 		return errors.New("insertItems and updateItems must have length less than or equal to 100")
 	}
@@ -666,7 +651,6 @@ func (d *dynamo[T]) TxRawExec(ctx context.Context, insertItems []TxRawInsert, up
 		}
 		tp := time.Now()
 		err := d.txRawExec(ctx, insertItems, updateItems, optsIn)
-		ReportErr(d.cfg.TableName, "TxRawExec", tp, err)
 		if err != nil {
 			errCh <- errors.Wrap(err, "TxRawExec insert fail")
 			return
@@ -749,7 +733,6 @@ func (d *dynamo[T]) DeleteItems(ctx context.Context, keys []map[string]any) (err
 	if len(keys) == 0 {
 		return
 	}
-	ReportIfPoolFull(d.pool, d.cfg.TableName, "DeleteItems")
 	errCh := make(chan error)
 	d.pool.New(func() {
 		var requests []types.WriteRequest
@@ -770,7 +753,6 @@ func (d *dynamo[T]) DeleteItems(ctx context.Context, keys []map[string]any) (err
 		err := d.batchWriteItemWithRetry(ctx, map[string][]types.WriteRequest{
 			d.cfg.TableName: requests,
 		})
-		ReportErr(d.cfg.TableName, "DeleteItems", tp, err)
 		if err != nil {
 			errCh <- errors.Wrap(err, "DeleteItems write fail")
 			return
@@ -781,7 +763,6 @@ func (d *dynamo[T]) DeleteItems(ctx context.Context, keys []map[string]any) (err
 }
 
 func (d *dynamo[T]) UpdateItem(ctx context.Context, update UpdateInfo) (err error) {
-	ReportIfPoolFull(d.pool, d.cfg.TableName, "UpdateItem")
 	errCh := make(chan error)
 	d.pool.New(func() {
 		key, sets, removes := update.Key, update.Sets, update.Removes
@@ -819,7 +800,6 @@ func (d *dynamo[T]) UpdateItem(ctx context.Context, update UpdateInfo) (err erro
 		}
 		tp := time.Now()
 		_, err = d.svc.UpdateItem(ctx, updateInput)
-		ReportErr(d.cfg.TableName, "UpdateItem", tp, err)
 		if err != nil {
 			errCh <- errors.Wrap(err, "UpdateItem update item")
 			return
@@ -874,7 +854,6 @@ func (d *dynamo[T]) UpdateItems(ctx context.Context, updates []UpdateInfo) (succ
 
 // updates 不能超过100个，否则dynamodb会报错
 func (d *dynamo[T]) TxUpdateItems(ctx context.Context, updates []UpdateInfo, opts ...Option) (err error) {
-	ReportIfPoolFull(d.pool, d.cfg.TableName, "TxUpdateItems")
 	if len(updates) > 100 {
 		return errors.New("updates must have length less than or equal to 100")
 	}
@@ -886,7 +865,6 @@ func (d *dynamo[T]) TxUpdateItems(ctx context.Context, updates []UpdateInfo, opt
 		}
 		tp := time.Now()
 		err := d.txUpdateItems(ctx, updates, optsIn)
-		ReportErr(d.cfg.TableName, "TxUpdateItems", tp, err)
 		if err != nil {
 			errCh <- errors.Wrap(err, "TxUpdateItems update fail")
 			return

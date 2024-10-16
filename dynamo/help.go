@@ -9,14 +9,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/ChewZ-life/go-pkg/concurrency/go_pool"
-	"github.com/ChewZ-life/go-pkg/monitor"
-	"github.com/ChewZ-life/go-pkg/xutils"
-)
-
-const (
-	MonitorFailure      = "db_dynamo_oss_failure"
-	MonitorTimeout      = "db_dynamo_oss_timeout"
-	MonitorPoolHitLimit = "db_dynamo_oss_pool_hit_limit" // 连接池满了时,进行一次上报
 )
 
 const (
@@ -160,38 +152,9 @@ func getConditionExpression(conditions Conditions, names map[string]string, valu
 // 	return ok
 // }
 
-func ReportErr(table, api string, tp time.Time, err error) {
-	if err != nil {
-		monitor.ReportEvent(MonitorFailure, 1, map[string]interface{}{
-			"server": monitor.GetglobalLocalServerID(),
-			"ip":     monitor.GetglobalLocalIP(),
-			"table":  table,
-			"api":    api,
-			"err":    err.Error(),
-		})
-	}
-	cost := time.Since(tp).Milliseconds()
-	if cost > TimeoutMS {
-		monitor.ReportEvent(MonitorTimeout, 1, map[string]interface{}{
-			"server": monitor.GetglobalLocalServerID(),
-			"ip":     monitor.GetglobalLocalIP(),
-			"table":  table,
-			"api":    api,
-			"cost":   cost,
-		})
-	}
-}
 
-func ReportIfPoolFull[T any](pool *go_pool.Pool[T], table, api string) {
-	if !pool.IsFull() {
-		return
-	}
-	monitor.ReportEvent(MonitorPoolHitLimit, 1, map[string]interface{}{
-		"server": monitor.GetglobalLocalServerID(),
-		"ip":     monitor.GetglobalLocalIP(),
-		"table":  table,
-		"api":    api,
-	})
+func IsEqual(f1, f2 float64) bool {
+	return math.Abs(f1-f2) < MIN
 }
 
 // 值太小时, dynamodb也会报错, 这里特殊处理下小值
@@ -202,7 +165,7 @@ func Float64(f float64) float64 {
 	if math.IsInf(f, 0) {
 		return 0
 	}
-	if xutils.IsEqual(f, 0.0) {
+	if IsEqual(f, 0.0) {
 		return 0.0
 	}
 	return f

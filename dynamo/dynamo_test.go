@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"github.com/ChewZ-life/go-pkg/monitor"
 )
 
 func getTestCfg(tableName string) Config {
@@ -227,7 +226,6 @@ func TestDynamo_InsertItems_Case0(t *testing.T) {
 		 aws dynamodb delete-table --endpoint-url http://localhost:8000 \
 		 --table-name tb_test_item0
 	*/
-	monitor.InitForTest()
 	tableName := "tb_test_item0"
 	deleteTable(tableName)
 	createTableType1(tableName, "num_key", "other")
@@ -262,7 +260,6 @@ func TestDynamo_InsertItems_Case1(t *testing.T) {
 	   aws dynamodb delete-table --endpoint-url http://localhost:8000 \
 	   --table-name tb_test_item01
 	*/
-	monitor.InitForTest()
 	tableName := "tb_test_item01"
 	deleteTable(tableName)
 	createTableType1(tableName, "num_key", "other")
@@ -270,7 +267,6 @@ func TestDynamo_InsertItems_Case1(t *testing.T) {
 }
 
 func TestDynamo_TxInsertItems_Case0(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item01"
 	deleteTable(tableName)
 	createTableType1(tableName, "num_key", "other")
@@ -326,7 +322,6 @@ func TestDynamo_TxInsertItems_Case0(t *testing.T) {
 
 // TestDynamo_TxInsertItems_Case1 测试条件表达式, 写入的记录存在时直接报错
 func TestDynamo_TxInsertItems_Case1(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item01"
 	deleteTable(tableName)
 	createTableType1(tableName, "num_key", "other")
@@ -361,7 +356,6 @@ func TestDynamo_TxInsertItems_Case1(t *testing.T) {
 
 // TestDynamo_TxInsertItems_Case2 测试条件表达式, 写入的记录不存在时直接报错
 func TestDynamo_TxInsertItems_Case2(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item01"
 	deleteTable(tableName)
 	createTableType1(tableName, "num_key", "other")
@@ -392,7 +386,6 @@ func TestDynamo_TxInsertItems_Case2(t *testing.T) {
 
 // TestDynamo_TxInsertItems_Case3 测试幂等性
 func TestDynamo_TxInsertItems_Case3(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item01"
 	deleteTable(tableName)
 	createTableType1(tableName, "num_key", "other")
@@ -453,7 +446,6 @@ func TestDynamo_DeleteItems_Case0(t *testing.T) {
 	   aws dynamodb delete-table --endpoint-url http://localhost:8000 \
 	   --table-name tb_test_item03
 	*/
-	monitor.InitForTest()
 	tableName := "tb_test_item03"
 	deleteTable(tableName)
 	createTableType1(tableName, "num_key", "other")
@@ -524,7 +516,6 @@ func TestDynamo_QueryItem_Case0(t *testing.T) {
 		 aws dynamodb delete-table --endpoint-url http://localhost:8000 \
 		 --table-name tb_test_item1
 	*/
-	monitor.InitForTest()
 	tableName := "tb_test_item1"
 	deleteTable(tableName)
 	createTableType2(tableName, "str_key")
@@ -599,7 +590,6 @@ func TestDynamo_QueryItem_Case1(t *testing.T) {
 		 aws dynamodb delete-table --endpoint-url http://localhost:8000 \
 		 --table-name tb_test_item2
 	*/
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -653,7 +643,6 @@ func TestDynamo_QueryItem_Case1(t *testing.T) {
 }
 
 func TestDynamo_UpdateItem_Case0(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -704,7 +693,6 @@ func TestDynamo_UpdateItem_Case0(t *testing.T) {
 }
 
 func TestDynamo_UpdateItem_Case1(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -756,7 +744,6 @@ func TestDynamo_UpdateItem_Case1(t *testing.T) {
 
 // TestDynamo_UpdateItem_Case2 测试条件表达式, 条件满足的场景
 func TestDynamo_UpdateItem_Case2(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -815,7 +802,6 @@ func TestDynamo_UpdateItem_Case2(t *testing.T) {
 
 // TestDynamo_UpdateItem_Case3 测试条件表达式, 条件不满足的场景
 func TestDynamo_UpdateItem_Case3(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -879,7 +865,6 @@ func TestDynamo_UpdateItem_Case3(t *testing.T) {
 }
 
 func TestDynamo_TxUpdateItems_Case0(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -965,7 +950,6 @@ func TestDynamo_TxUpdateItems_Case0(t *testing.T) {
 
 // TestDynamo_TxUpdateItems_Case1 测试条件表达式满足的场景
 func TestDynamo_TxUpdateItems_Case1(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -1026,7 +1010,6 @@ func TestDynamo_TxUpdateItems_Case1(t *testing.T) {
 
 // TestDynamo_TxUpdateItems_Case2 测试条件表达式不满足的场景
 func TestDynamo_TxUpdateItems_Case2(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -1095,7 +1078,6 @@ func TestDynamo_TxUpdateItems_Case2(t *testing.T) {
 
 // TestDynamo_TxUpdateItems_Case3 测试幂等
 func TestDynamo_TxUpdateItems_Case3(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -1148,7 +1130,6 @@ func TestDynamo_TxUpdateItems_Case3(t *testing.T) {
 
 // TestDynamo_TxUpdateItems_Case4 测试条件表达式超过100个的场景
 func TestDynamo_TxUpdateItems_Case4(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item4"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -1192,7 +1173,6 @@ func TestDynamo_TxUpdateItems_Case4(t *testing.T) {
 }
 
 func TestDynamo_UpdateItems_Case0(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -1279,7 +1259,6 @@ func TestDynamo_UpdateItems_Case0(t *testing.T) {
 
 // TestDynamo_UpdateItems_Case1 测试条件表达式满足的场景
 func TestDynamo_UpdateItems_Case1(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -1341,7 +1320,6 @@ func TestDynamo_UpdateItems_Case1(t *testing.T) {
 
 // TestDynamo_UpdateItems_Case2 测试条件表达式不满足的场景
 func TestDynamo_UpdateItems_Case2(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -1411,7 +1389,6 @@ func TestDynamo_UpdateItems_Case2(t *testing.T) {
 
 // TestDynamo_UpdateItems_Case3 测试条件表达式超过100个的场景
 func TestDynamo_UpdateItems_Case3(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_test_item3"
 	deleteTable(tableName)
 	createTableType3(tableName, "str_key", "num_key")
@@ -1544,7 +1521,6 @@ func createFillOrder(tableName string, hashKey, sortKey, globalHash, globalSort 
 }
 
 func TestDynamo_TxRawExec_Case0(t *testing.T) {
-	monitor.InitForTest()
 	tableName0 := "tb_fill_order0"
 	deleteTable(tableName0)
 	createFillOrder(tableName0, "user_id", "sort_id", "order_id", "sort_id")
@@ -1633,7 +1609,6 @@ func TestDynamo_TxRawExec_Case0(t *testing.T) {
 }
 
 func TestDynamo_QueryItems_Case0(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_fill_order0"
 	deleteTable(tableName)
 	createFillOrder(tableName, "user_id", "sort_id", "order_id", "sort_id")
@@ -1712,7 +1687,6 @@ func TestDynamo_QueryItems_Case0(t *testing.T) {
 }
 
 func TestDynamo_QueryItems_Case1(t *testing.T) {
-	monitor.InitForTest()
 	tableName := "tb_fill_order1"
 	deleteTable(tableName)
 	createFillOrder(tableName, "user_id", "sort_id", "order_id", "sort_id")
