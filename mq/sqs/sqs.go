@@ -106,7 +106,7 @@ func (s *SQS) processMessages(i int) {
 			}
 
 			// 拉取消息
-			const waitSeconds = 5
+			const waitSeconds = 20
 			const messageCount = 10
 			ctx, cancel := context.WithTimeout(context.Background(), (waitSeconds+1)*time.Second)
 			defer cancel()
