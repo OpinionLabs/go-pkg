@@ -8,8 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
-
-	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/pkg/errors"
 )
 
@@ -39,14 +37,12 @@ func Get[T interface{}](ctx context.Context, urlStr string, opts ...Option) (res
 
 	if response.StatusCode != http.StatusOK {
 		err = errors.Errorf("Get http expect, statusCode: %d", response.StatusCode)
-		err = errno.New(errno.InternalServerError, err.Error())
 		return
 	}
 
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		err = errors.Wrap(err, "Get read response")
-		err = errno.New(errno.InternalServerError, err.Error())
 		return
 	}
 
@@ -55,7 +51,6 @@ func Get[T interface{}](ctx context.Context, urlStr string, opts ...Option) (res
 	err = d.Decode(&responseInfo)
 	if err != nil {
 		err = errors.Wrap(err, fmt.Sprintf("Get unmarshal response %s", string(responseData)))
-		err = errno.New(errno.InternalServerError, err.Error())
 		return
 	}
 
@@ -91,21 +86,18 @@ func Post[T interface{}](ctx context.Context, urlStr string, header http.Header,
 
 	if response.StatusCode != http.StatusOK {
 		err = errors.Errorf("Post http expect, statusCode: %d", response.StatusCode)
-		err = errno.New(errno.InternalServerError, err.Error())
 		return
 	}
 
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		err = errors.Wrap(err, "Post read response")
-		err = errno.New(errno.InternalServerError, err.Error())
 		return
 	}
 
 	err = json.Unmarshal(responseData, &responseInfo)
 	if err != nil {
 		err = errors.Wrap(err, "Post unmarshal response")
-		err = errno.New(errno.InternalServerError, err.Error())
 		return
 	}
 	return
