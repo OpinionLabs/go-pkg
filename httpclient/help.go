@@ -22,7 +22,7 @@ func handleHttpRespErr(reqUrl string, tp time.Time, response *http.Response, err
 
 	cost := time.Since(tp).Milliseconds()
 	if cost > TimeoutMS {
-		log.Println(err)
+		log.Printf("url: %s request cost: %d.", reqUrl, cost)
 	}
 }
 
