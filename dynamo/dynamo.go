@@ -17,6 +17,7 @@ import (
 	"github.com/aws/smithy-go/logging"
 	"github.com/pkg/errors"
 	"github.com/ChewZ-life/go-pkg/concurrency/go_pool"
+    "github.com/aws/aws-sdk-go-v2/aws/retry"
 )
 
 var _ Dynamo[struct{}] = (*dynamo[struct{}])(nil)
@@ -131,7 +132,14 @@ func NewDynamo[T any](cfg Config) Dynamo[T] {
 			// config.WithLogger(logging.NewStandardLogger(logFile))
 			options.HTTPClient = &http.Client{Transport: &defaultTransport}
 			return nil
-		})
+			},
+        	// 配置重试策略
+        	config.WithRetryer(func() aws.Retryer {
+            	return retry.NewStandard(func(o *retry.StandardOptions) {
+                	o.MaxAttempts = 3 // 设置最大重试次数
+            	})
+        	}),
+		)
 		if err != nil {
 			log.Fatalf("unable to load SDK config, %v", err)
 		}
