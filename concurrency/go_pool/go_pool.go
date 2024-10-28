@@ -2,7 +2,8 @@ package go_pool
 
 import (
 	"log"
-
+	"time"
+	
 	"go.uber.org/atomic"
 )
 
@@ -65,7 +66,11 @@ func (p *Pool[T]) startWorker(i int) {
 				}
 			}
 			p.running.Add(-1)
-		}
+		case <-time.After(3 * time.Minute):
+    		if p.options.debug {
+       			 log.Println("go_pool worker ", i, " timed out")
+    		}
+    	}
 	}
 }
 

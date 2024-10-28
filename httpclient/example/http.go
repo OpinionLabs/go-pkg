@@ -44,11 +44,12 @@ func main() {
 
 	urlStr := fmt.Sprintf("http://%s%s?%s", "", api, params.Encode())
 
-	resp, err := httpclient.Get[klineResp](context.TODO(), urlStr)
+	_, err := httpclient.Get[klineResp](context.TODO(), urlStr)
 	if err != nil {
 		return
 	}
-	fmt.Println(resp.Result.Data)
+	// fmt.Println(urlStr)
+	// fmt.Println(resp.Result.Data)
 }
 
 
