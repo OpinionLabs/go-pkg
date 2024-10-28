@@ -3,23 +3,23 @@ module github.com/ChewZ-life/go-pkg
 go 1.21.5
 
 require (
-	github.com/aws/aws-sdk-go v1.55.5
-	github.com/aws/aws-sdk-go-v2 v1.32.2
-	github.com/aws/aws-sdk-go-v2/config v1.27.43
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.41
-	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.15.12
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.17 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.21 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.21 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.1 // indirect
-	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.36.2
-	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.24.2
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.10.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.24.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.32.2 // indirect
+	github.com/aws/aws-sdk-go v1.42.34
+	github.com/aws/aws-sdk-go-v2 v1.18.0
+	github.com/aws/aws-sdk-go-v2/config v1.18.21
+	github.com/aws/aws-sdk-go-v2/credentials v1.13.20
+	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.10.21
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.13.2 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.33 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.27 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.33 // indirect
+	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.19.7
+	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.14.11
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.9.11 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.7.27 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.26 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.12.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.18.9 // indirect
 	github.com/aws/smithy-go v1.22.0
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/json-iterator/go v1.1.12
@@ -44,3 +44,37 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/aws/aws-sdk-go v1.42.34 => github.com/aws/aws-sdk-go v1.42.34
+
+replace github.com/aws/aws-sdk-go-v2 v1.18.0 => github.com/aws/aws-sdk-go-v2 v1.18.0
+
+replace github.com/aws/aws-sdk-go-v2/service/dynamodb v1.19.7 => github.com/aws/aws-sdk-go-v2/service/dynamodb v1.19.7
+
+replace github.com/aws/aws-sdk-go-v2/config v1.18.21 => github.com/aws/aws-sdk-go-v2/config v1.18.21
+
+replace github.com/aws/aws-sdk-go-v2/credentials v1.13.20 => github.com/aws/aws-sdk-go-v2/credentials v1.13.20
+
+replace github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.10.21 => github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.10.21
+
+replace github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.13.2 => github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.13.2
+
+replace github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.33 => github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.33
+
+replace github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.27 => github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.27
+
+replace github.com/aws/aws-sdk-go-v2/internal/ini v1.3.33 => github.com/aws/aws-sdk-go-v2/internal/ini v1.3.33
+
+replace github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.14.11 => github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.14.11
+
+replace github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.9.11 => github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.9.11
+
+replace github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.7.27 => github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.7.27
+
+replace github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.26 => github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.26
+
+replace github.com/aws/aws-sdk-go-v2/service/sso v1.12.8 => github.com/aws/aws-sdk-go-v2/service/sso v1.12.8
+
+replace github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.8 => github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.8
+
+replace github.com/aws/aws-sdk-go-v2/service/sts v1.18.9 => github.com/aws/aws-sdk-go-v2/service/sts v1.18.9
