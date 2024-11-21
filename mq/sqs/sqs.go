@@ -2,6 +2,7 @@ package sqs
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/ChewZ-life/go-pkg/mq/utils/log"
@@ -235,7 +236,9 @@ func (s *SQS) processMessagesV1(i int) {
 					WaitTimeSeconds:     aws.Int64(waitSeconds),
 				})
 			if err != nil {
-				s.logger.ErrorWithFields("sqs SQS.processMessagesV1 receive message fail.", log.Fields{"err": err.Error()})
+				if !strings.Contains(err.Error(), "context deadline exceeded") {
+					s.logger.ErrorWithFields("sqs SQS.processMessagesV1 receive message fail.", log.Fields{"err": err.Error()})
+				}
 				return
 			}
 
