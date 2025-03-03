@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
+
 	"github.com/pkg/errors"
 )
 
@@ -40,7 +41,7 @@ func Get[T interface{}](ctx context.Context, urlStr string, opts ...Option) (res
 		return
 	}
 
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		err = errors.Wrap(err, "Get read response")
 		return
@@ -89,7 +90,7 @@ func Post[T interface{}](ctx context.Context, urlStr string, header http.Header,
 		return
 	}
 
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		err = errors.Wrap(err, "Post read response")
 		return
