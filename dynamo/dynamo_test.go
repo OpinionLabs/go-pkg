@@ -32,7 +32,7 @@ type TestItem0 struct {
 	Other  string `dynamodbav:"other"`
 }
 
-// 建一个表, 分区键数字, 排序建是字符串
+// Create a table with numeric partition key and string sort key
 func createTableType1(tableName string, hashKey, sortKey string) {
 	d := NewDynamo[TestItem0](getTestCfg(tableName))
 	defer d.Exit()
@@ -84,7 +84,7 @@ func createTableType1(tableName string, hashKey, sortKey string) {
 		", sortKey:", sortKey, ", err:", err)
 }
 
-// 建一个表, 分区键字符串, 没有排序建
+// Create a table with string partition key and no sort key
 func createTableType2(tableName string, hashKey string) {
 	d := NewDynamo[TestItem0](getTestCfg(tableName))
 	defer d.Exit()
@@ -110,7 +110,7 @@ func createTableType2(tableName string, hashKey string) {
 	log.Println("createTableType2 table:", tableName, ", hashKey:", hashKey, ", err:", err)
 }
 
-// 建一个表, 分区键字符串, 排序建是数字
+// Create a table with string partition key and numeric sort key
 func createTableType3(tableName string, hashKey, sortKey string) {
 	d := NewDynamo[TestItem0](getTestCfg(tableName))
 	defer d.Exit()
@@ -184,7 +184,7 @@ func testDynamo_InsertItems_Case0(t *testing.T, tableName, indexName string) {
 		}
 	}
 
-	// 测试查询, 使用不同的limit测试分页的正确性
+	// Test querying, use different limits to test pagination correctness
 	for _, limit := range []int{1, 2, 3, 4, 5, 6, 1000} {
 		var getItems []TestItem0
 		var fromKey interface{}
@@ -203,28 +203,28 @@ func testDynamo_InsertItems_Case0(t *testing.T, tableName, indexName string) {
 	}
 }
 
-// 测试写入一批记录, 然后使用全表扫描获取结果
+// Test writing a batch of records and retrieving results using full table scan
 func TestDynamo_InsertItems_Case0(t *testing.T) {
 	/*
-		// 新建表格
-		 aws dynamodb create-table --endpoint-url http://localhost:8000 \
-		     --table-name tb_test_item0 \
-		     --attribute-definitions \
-		         AttributeName=num_key,AttributeType=N \
-		         AttributeName=other,AttributeType=S \
-		     --key-schema \
-		         AttributeName=num_key,KeyType=HASH \
-		         AttributeName=other,KeyType=RANGE \
-		     --provisioned-throughput \
-		         ReadCapacityUnits=5,WriteCapacityUnits=5 \
-		     --table-class STANDARD
+		// Create table
+		aws dynamodb create-table --endpoint-url http://localhost:8000 \
+		    --table-name tb_test_item0 \
+		    --attribute-definitions \
+		        AttributeName=num_key,AttributeType=N \
+		        AttributeName=other,AttributeType=S \
+		    --key-schema \
+		        AttributeName=num_key,KeyType=HASH \
+		        AttributeName=other,KeyType=RANGE \
+		    --provisioned-throughput \
+		        ReadCapacityUnits=5,WriteCapacityUnits=5 \
+		    --table-class STANDARD
 
-		 // 列出表格
-		 aws dynamodb list-tables --endpoint-url http://localhost:8000
+		// List tables
+		aws dynamodb list-tables --endpoint-url http://localhost:8000
 
-		 // 删除表格
-		 aws dynamodb delete-table --endpoint-url http://localhost:8000 \
-		 --table-name tb_test_item0
+		// Delete table
+		aws dynamodb delete-table --endpoint-url http://localhost:8000 \
+		--table-name tb_test_item0
 	*/
 	tableName := "tb_test_item0"
 	deleteTable(tableName)
@@ -232,10 +232,10 @@ func TestDynamo_InsertItems_Case0(t *testing.T) {
 	testDynamo_InsertItems_Case0(t, tableName, "")
 }
 
-// 测试写入一批记录, 然后使用扫描本地二级索引获取结果
+// Test writing a batch of records and retrieving results using local secondary index scan
 func TestDynamo_InsertItems_Case1(t *testing.T) {
 	/*
-	   // 新建表格
+	   // Create table
 	   aws dynamodb create-table --endpoint-url http://localhost:8000 \
 	       --table-name tb_test_item01 \
 	       --attribute-definitions \
@@ -253,10 +253,10 @@ func TestDynamo_InsertItems_Case1(t *testing.T) {
 	                           {\"AttributeName\":\"other\",\"KeyType\":\"RANGE\"}],
 	            \"Projection\":{\"ProjectionType\":\"ALL\"}}]"
 
-	   // 列出表格
+	   // List tables
 	   aws dynamodb list-tables --endpoint-url http://localhost:8000
 
-	   // 删除表格
+	   // Delete table
 	   aws dynamodb delete-table --endpoint-url http://localhost:8000 \
 	   --table-name tb_test_item01
 	*/
@@ -285,7 +285,7 @@ func TestDynamo_TxInsertItems_Case0(t *testing.T) {
 	}
 
 	assert := require.New(t)
-	err := d.TxInsertItems(context.TODO(), infos) // 跟上一个case的区别在这里, 使用了事务写
+	err := d.TxInsertItems(context.TODO(), infos) // Use transaction to write
 	assert.Nil(err)
 
 	checkGetItems := func(getItems []TestItem0) {
@@ -301,7 +301,7 @@ func TestDynamo_TxInsertItems_Case0(t *testing.T) {
 		}
 	}
 
-	// 测试查询, 使用不同的limit测试分页的正确性
+	// Test querying, use different limits to test pagination correctness
 	for _, limit := range []int{1, 2, 3, 4, 5, 6, 1000} {
 		var getItems []TestItem0
 		var fromKey interface{}
@@ -320,7 +320,7 @@ func TestDynamo_TxInsertItems_Case0(t *testing.T) {
 	}
 }
 
-// TestDynamo_TxInsertItems_Case1 测试条件表达式, 写入的记录存在时直接报错
+// TestDynamo_TxInsertItems_Case1 Test condition expressions, error when record exists
 func TestDynamo_TxInsertItems_Case1(t *testing.T) {
 	tableName := "tb_test_item01"
 	deleteTable(tableName)
@@ -349,12 +349,12 @@ func TestDynamo_TxInsertItems_Case1(t *testing.T) {
 	err := d.TxInsertItems(context.TODO(), insertInfos)
 	assert.Nil(err)
 
-	// 重复写入, 会报错
+	// Duplicate write will report an error
 	err = d.TxInsertItems(context.TODO(), insertInfos)
-	assert.NotNil(err, err)
+	assert.NotNil(err)
 }
 
-// TestDynamo_TxInsertItems_Case2 测试条件表达式, 写入的记录不存在时直接报错
+// TestDynamo_TxInsertItems_Case2 Test condition expressions, error when record does not exist
 func TestDynamo_TxInsertItems_Case2(t *testing.T) {
 	tableName := "tb_test_item01"
 	deleteTable(tableName)
@@ -384,7 +384,7 @@ func TestDynamo_TxInsertItems_Case2(t *testing.T) {
 	assert.NotNil(err)
 }
 
-// TestDynamo_TxInsertItems_Case3 测试幂等性
+// TestDynamo_TxInsertItems_Case3 Test idempotency
 func TestDynamo_TxInsertItems_Case3(t *testing.T) {
 	tableName := "tb_test_item01"
 	deleteTable(tableName)
@@ -421,7 +421,7 @@ type TestItem02 struct {
 
 func TestDynamo_DeleteItems_Case0(t *testing.T) {
 	/*
-	   // 新建表格
+	   // Create table
 	   aws dynamodb create-table --endpoint-url http://localhost:8000 \
 	       --table-name tb_test_item03 \
 	       --attribute-definitions \
@@ -439,10 +439,10 @@ func TestDynamo_DeleteItems_Case0(t *testing.T) {
 	                           {\"AttributeName\":\"other\",\"KeyType\":\"RANGE\"}],
 	            \"Projection\":{\"ProjectionType\":\"ALL\"}}]"
 
-	   // 列出表格
+	   // List tables
 	   aws dynamodb list-tables --endpoint-url http://localhost:8000
 
-	   // 删除表格
+	   // Delete table
 	   aws dynamodb delete-table --endpoint-url http://localhost:8000 \
 	   --table-name tb_test_item03
 	*/
@@ -495,10 +495,10 @@ type TestItem1 struct {
 	StrAttr2 string `dynamodbav:"str_attr2"`
 }
 
-// 测试查询单个项目, 只有分区键 但 没有排序键
+// Test querying single item with only partition key but no sort key
 func TestDynamo_QueryItem_Case0(t *testing.T) {
 	/*
-		// 新建表格
+		// Create table
 		 aws dynamodb create-table --endpoint-url http://localhost:8000 \
 		     --table-name tb_test_item1 \
 		     --attribute-definitions \
@@ -509,10 +509,10 @@ func TestDynamo_QueryItem_Case0(t *testing.T) {
 		         ReadCapacityUnits=5,WriteCapacityUnits=5 \
 		     --table-class STANDARD
 
-		 // 列出表格
+		 // List tables
 		 aws dynamodb list-tables --endpoint-url http://localhost:8000
 
-		 // 删除表格
+		 // Delete table
 		 aws dynamodb delete-table --endpoint-url http://localhost:8000 \
 		 --table-name tb_test_item1
 	*/
@@ -553,7 +553,7 @@ func TestDynamo_QueryItem_Case0(t *testing.T) {
 	assert.False(exist)
 
 	_, _, err = d.QueryItem(context.TODO(), map[string]interface{}{
-		"not_exist_str_key": "test_key", // 无效key值, 也会检查错误
+		"not_exist_str_key": "test_key", // Invalid key value, will also check for errors
 	})
 	assert.NotNil(err)
 }
@@ -567,10 +567,10 @@ type TestItem2 struct {
 	StrAttr2 string `dynamodbav:"str_attr2"`
 }
 
-// 测试查询单个项目, 有分区键 也有排序键
+// Test querying single item with both partition key and sort key
 func TestDynamo_QueryItem_Case1(t *testing.T) {
 	/*
-		// 新建表格
+		// Create table
 		 aws dynamodb create-table --endpoint-url http://localhost:8000 \
 		     --table-name tb_test_item2 \
 		     --attribute-definitions \
@@ -583,10 +583,10 @@ func TestDynamo_QueryItem_Case1(t *testing.T) {
 		         ReadCapacityUnits=5,WriteCapacityUnits=5 \
 		     --table-class STANDARD
 
-		 // 列出表格
+		 // List tables
 		 aws dynamodb list-tables --endpoint-url http://localhost:8000
 
-		 // 删除表格
+		 // Delete table
 		 aws dynamodb delete-table --endpoint-url http://localhost:8000 \
 		 --table-name tb_test_item2
 	*/
@@ -616,7 +616,7 @@ func TestDynamo_QueryItem_Case1(t *testing.T) {
 
 	exist, getItem, err := d.QueryItem(context.TODO(), map[string]interface{}{
 		"str_key": "test_key",
-		"num_key": 1, // key的数量必须和表的唯一键相同
+		"num_key": 1, // Number of keys must match the table's unique keys
 	})
 	assert.Nil(err)
 	assert.True(exist)
@@ -737,12 +737,12 @@ func TestDynamo_UpdateItem_Case1(t *testing.T) {
 	assert.Nil(err)
 	assert.True(exist)
 	assert.Equal(10, retItem.NumAttr1)
-	assert.Equal(0, retItem.NumAttr2) // 属性被删除了
+	assert.Equal(0, retItem.NumAttr2) // Attribute has been deleted
 	assert.Equal("aa", retItem.StrAttr1)
-	assert.Equal("", retItem.StrAttr2) // 属性被删除了
+	assert.Equal("", retItem.StrAttr2) // Attribute has been deleted
 }
 
-// TestDynamo_UpdateItem_Case2 测试条件表达式, 条件满足的场景
+// TestDynamo_UpdateItem_Case2 Test condition expressions in satisfied scenarios
 func TestDynamo_UpdateItem_Case2(t *testing.T) {
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
@@ -795,12 +795,12 @@ func TestDynamo_UpdateItem_Case2(t *testing.T) {
 	assert.Nil(err)
 	assert.True(exist)
 	assert.Equal(10, retItem.NumAttr1)
-	assert.Equal(0, retItem.NumAttr2) // 属性被删除了
+	assert.Equal(0, retItem.NumAttr2) // Attribute has been deleted
 	assert.Equal("aa", retItem.StrAttr1)
-	assert.Equal("", retItem.StrAttr2) // 属性被删除了
+	assert.Equal("", retItem.StrAttr2) // Attribute has been deleted
 }
 
-// TestDynamo_UpdateItem_Case3 测试条件表达式, 条件不满足的场景
+// TestDynamo_UpdateItem_Case3 Test condition expressions in unsatisfied scenarios
 func TestDynamo_UpdateItem_Case3(t *testing.T) {
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
@@ -854,7 +854,7 @@ func TestDynamo_UpdateItem_Case3(t *testing.T) {
 		assert.NotNil(err)
 	}
 
-	// 属性没有变
+	// Attribute has not changed
 	exist, retItem, err := d.QueryItem(context.TODO(), key)
 	assert.Nil(err)
 	assert.True(exist)
@@ -935,20 +935,20 @@ func TestDynamo_TxUpdateItems_Case0(t *testing.T) {
 	assert.Nil(err)
 	assert.True(exist)
 	assert.Equal(100, retItem.NumAttr1)
-	assert.Equal(0, retItem.NumAttr2) // 属性被删除了
+	assert.Equal(0, retItem.NumAttr2) // Attribute has been deleted
 	assert.Equal("aa", retItem.StrAttr1)
-	assert.Equal("", retItem.StrAttr2) // 属性被删除了
+	assert.Equal("", retItem.StrAttr2) // Attribute has been deleted
 
 	exist, retItem, err = d.QueryItem(context.TODO(), updates[1].Key)
 	assert.Nil(err)
 	assert.True(exist)
 	assert.Equal(1000, retItem.NumAttr1)
-	assert.Equal(0, retItem.NumAttr2) // 属性被删除了
+	assert.Equal(0, retItem.NumAttr2) // Attribute has been deleted
 	assert.Equal("aaaa", retItem.StrAttr1)
-	assert.Equal("", retItem.StrAttr2) // 属性被删除了
+	assert.Equal("", retItem.StrAttr2) // Attribute has been deleted
 }
 
-// TestDynamo_TxUpdateItems_Case1 测试条件表达式满足的场景
+// TestDynamo_TxUpdateItems_Case1 Test condition expressions in satisfied scenarios
 func TestDynamo_TxUpdateItems_Case1(t *testing.T) {
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
@@ -1003,12 +1003,12 @@ func TestDynamo_TxUpdateItems_Case1(t *testing.T) {
 	assert.Nil(err)
 	assert.True(exist)
 	assert.Equal(100, retItem.NumAttr1)
-	assert.Equal(0, retItem.NumAttr2) // 属性被删除了
+	assert.Equal(0, retItem.NumAttr2) // Attribute has been deleted
 	assert.Equal("aa", retItem.StrAttr1)
-	assert.Equal("", retItem.StrAttr2) // 属性被删除了
+	assert.Equal("", retItem.StrAttr2) // Attribute has been deleted
 }
 
-// TestDynamo_TxUpdateItems_Case2 测试条件表达式不满足的场景
+// TestDynamo_TxUpdateItems_Case2 Test condition expressions in unsatisfied scenarios
 func TestDynamo_TxUpdateItems_Case2(t *testing.T) {
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
@@ -1076,7 +1076,7 @@ func TestDynamo_TxUpdateItems_Case2(t *testing.T) {
 	assert.Equal("bb", retItem.StrAttr2)
 }
 
-// TestDynamo_TxUpdateItems_Case3 测试幂等
+// TestDynamo_TxUpdateItems_Case3 Test idempotency
 func TestDynamo_TxUpdateItems_Case3(t *testing.T) {
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
@@ -1124,11 +1124,11 @@ func TestDynamo_TxUpdateItems_Case3(t *testing.T) {
 	}
 
 	// txID := WithTxID(fmt.Sprint(time.Now().UnixNano()))
-	assert.Nil(d.TxUpdateItems(context.TODO(), updates))    // 首次请求,可以成功
-	assert.NotNil(d.TxUpdateItems(context.TODO(), updates)) // 条件表达式不满足条件
+	assert.Nil(d.TxUpdateItems(context.TODO(), updates))    // First request, successful
+	assert.NotNil(d.TxUpdateItems(context.TODO(), updates)) // Condition expression does not satisfy the condition
 }
 
-// TestDynamo_TxUpdateItems_Case4 测试条件表达式超过100个的场景
+// TestDynamo_TxUpdateItems_Case4 Test scenarios with more than 100 condition expressions
 func TestDynamo_TxUpdateItems_Case4(t *testing.T) {
 	tableName := "tb_test_item4"
 	deleteTable(tableName)
@@ -1244,20 +1244,20 @@ func TestDynamo_UpdateItems_Case0(t *testing.T) {
 	assert.Nil(err)
 	assert.True(exist)
 	assert.Equal(100, retItem.NumAttr1)
-	assert.Equal(0, retItem.NumAttr2) // 属性被删除了
+	assert.Equal(0, retItem.NumAttr2) // Attribute has been deleted
 	assert.Equal("aa", retItem.StrAttr1)
-	assert.Equal("", retItem.StrAttr2) // 属性被删除了
+	assert.Equal("", retItem.StrAttr2) // Attribute has been deleted
 
 	exist, retItem, err = d.QueryItem(context.TODO(), updates[1].Key)
 	assert.Nil(err)
 	assert.True(exist)
 	assert.Equal(1000, retItem.NumAttr1)
-	assert.Equal(0, retItem.NumAttr2) // 属性被删除了
+	assert.Equal(0, retItem.NumAttr2) // Attribute has been deleted
 	assert.Equal("aaaa", retItem.StrAttr1)
-	assert.Equal("", retItem.StrAttr2) // 属性被删除了
+	assert.Equal("", retItem.StrAttr2) // Attribute has been deleted
 }
 
-// TestDynamo_UpdateItems_Case1 测试条件表达式满足的场景
+// TestDynamo_UpdateItems_Case1 Test condition expressions in satisfied scenarios
 func TestDynamo_UpdateItems_Case1(t *testing.T) {
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
@@ -1313,12 +1313,12 @@ func TestDynamo_UpdateItems_Case1(t *testing.T) {
 	assert.Nil(err)
 	assert.True(exist)
 	assert.Equal(100, retItem.NumAttr1)
-	assert.Equal(0, retItem.NumAttr2) // 属性被删除了
+	assert.Equal(0, retItem.NumAttr2) // Attribute has been deleted
 	assert.Equal("aa", retItem.StrAttr1)
-	assert.Equal("", retItem.StrAttr2) // 属性被删除了
+	assert.Equal("", retItem.StrAttr2) // Attribute has been deleted
 }
 
-// TestDynamo_UpdateItems_Case2 测试条件表达式不满足的场景
+// TestDynamo_UpdateItems_Case2 Test condition expressions in unsatisfied scenarios
 func TestDynamo_UpdateItems_Case2(t *testing.T) {
 	tableName := "tb_test_item2"
 	deleteTable(tableName)
@@ -1387,7 +1387,7 @@ func TestDynamo_UpdateItems_Case2(t *testing.T) {
 	assert.Equal("bb", retItem.StrAttr2)
 }
 
-// TestDynamo_UpdateItems_Case3 测试条件表达式超过100个的场景
+// TestDynamo_UpdateItems_Case3 Test scenarios with more than 100 condition expressions
 func TestDynamo_UpdateItems_Case3(t *testing.T) {
 	tableName := "tb_test_item3"
 	deleteTable(tableName)
@@ -1447,11 +1447,11 @@ func TestDynamo_UpdateItems_Case3(t *testing.T) {
 }
 
 type FillOrder struct {
-	ID         int64     `orm:"column(id);pk;auto;" dynamodbav:"id"`          // 主键
-	UserID     int64     `orm:"column(user_id)" dynamodbav:"user_id"`         // 用户id
-	OrderID    int64     `orm:"column(order_id)" dynamodbav:"order_id"`       // 订单id
-	CreateTime time.Time `orm:"column(create_time)" dynamodbav:"create_time"` // 记录生成时间
-	UpdateTime time.Time `orm:"column(update_time)" dynamodbav:"update_time"` // 记录更新时间
+	ID         int64     `orm:"column(id);pk;auto;" dynamodbav:"id"`
+	UserID     int64     `orm:"column(user_id)" dynamodbav:"user_id"`
+	OrderID    int64     `orm:"column(order_id)" dynamodbav:"order_id"`
+	CreateTime time.Time `orm:"column(create_time)" dynamodbav:"create_time"`
+	UpdateTime time.Time `orm:"column(update_time)" dynamodbav:"update_time"`
 }
 
 type FillOrderWrap struct {
@@ -1529,7 +1529,7 @@ func TestDynamo_TxRawExec_Case0(t *testing.T) {
 	deleteTable(tableName1)
 	createFillOrder(tableName1, "user_id", "sort_id", "order_id", "sort_id")
 
-	// 插入测试数据
+	// Insert test data
 	d := NewDynamo[FillOrderWrap](getTestCfg(tableName0))
 	defer d.Exit()
 
@@ -1613,7 +1613,7 @@ func TestDynamo_QueryItems_Case0(t *testing.T) {
 	deleteTable(tableName)
 	createFillOrder(tableName, "user_id", "sort_id", "order_id", "sort_id")
 
-	// 插入测试数据
+	// Insert test data
 	d := NewDynamo[FillOrderWrap](getTestCfg(tableName))
 	defer d.Exit()
 
@@ -1656,7 +1656,7 @@ func TestDynamo_QueryItems_Case0(t *testing.T) {
 	err := d.InsertItems(context.TODO(), infos)
 	assert.Nil(err)
 
-	// 根据用户ID搜索
+	// Search by user ID
 	var lastKey interface{}
 	index := ""
 	condition := `(user_id = :user_id) and (sort_id between :start_tm and :end_tm)`
@@ -1691,7 +1691,7 @@ func TestDynamo_QueryItems_Case1(t *testing.T) {
 	deleteTable(tableName)
 	createFillOrder(tableName, "user_id", "sort_id", "order_id", "sort_id")
 
-	// 插入测试数据
+	// Insert test data
 	d := NewDynamo[FillOrderWrap](getTestCfg(tableName))
 	defer d.Exit()
 
@@ -1734,7 +1734,7 @@ func TestDynamo_QueryItems_Case1(t *testing.T) {
 	err := d.InsertItems(context.TODO(), infos)
 	assert.Nil(err)
 
-	// 根据订单ID搜索
+	// Search by order ID
 	var lastKey interface{}
 	index := "idx_orderid_sortid"
 	condition := `(order_id = :order_id) and (sort_id between :start_tm and :end_tm)`

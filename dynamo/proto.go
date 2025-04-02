@@ -16,7 +16,7 @@ const (
 )
 
 // const (
-// 	NameTransactionID = "TRANSACTION_ID" // 事务id名称, 用于幂等接口
+// 	NameTransactionID = "TRANSACTION_ID" // Transaction ID name, used for idempotent interfaces
 // )
 
 type InsertInfo[T any] struct {
@@ -31,7 +31,7 @@ type TxInsertInfo[T any] struct {
 type UpdateInfo struct {
 	Key, Sets, Removes map[string]any
 	Conditions         Conditions
-	TableName          string // 用于覆盖默认的表名的
+	TableName          string // Used to override the default table name
 }
 
 type TxRawInsert struct {
@@ -45,18 +45,18 @@ type TxRawUpdate struct {
 	UpdateInfo
 }
 
-// Conditions 表示写入和更新需要判断的前置条件, 条件表达式介绍参考:
+// Conditions represents preconditions for write and update operations, see condition expressions documentation:
 //
-//	https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ConditionExpressions.html
-//	https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
+//  https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ConditionExpressions.html
+//  https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
 type Conditions struct {
-	AttributeExists           map[string]any // 属性存在, 用于更新的场景
-	AttributeNotExists        map[string]any // 属性不存在, 用于写入的场景
-	AttributeEqual            map[string]any // 属性等于某个值, 用于更新的场景
-	AttributeNotExistsOrEqual map[string]any // 属性不存在或等于指定的值, 用于写入的场景
+	AttributeExists           map[string]any // Attribute exists, used for update scenarios
+	AttributeNotExists        map[string]any // Attribute does not exist, used for write scenarios
+	AttributeEqual            map[string]any // Attribute equals a specific value, used for update scenarios
+	AttributeNotExistsOrEqual map[string]any // Attribute does not exist or equals specified value, used for write scenarios
 }
 
-// 下面是跟streams有关的
+// Streams related types below
 type Stream struct {
 	Arn       string
 	Label     string
@@ -77,7 +77,7 @@ type StreamDescription struct {
 
 type ShardIteratorType string
 
-// 模仿dynamodb的shard类型
+// Mimic DynamoDB shard types
 const (
 	// Start reading exactly from the position denoted by a specific sequence number.
 	ShardIteratorTypeAt ShardIteratorType = "AT_SEQUENCE_NUMBER"

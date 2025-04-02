@@ -28,11 +28,11 @@ type keyValueReq struct {
 	errCh        chan error
 }
 
-// Producer 生产者
+// Producer Message producer
 type Producer struct {
-	config   SQSConfig                // 配置
-	logger   *log.Log                 // 日志
-	msgChans map[int]chan interface{} // 接收消息
+	config   SQSConfig                // Configuration
+	logger   *log.Log                 // Logger
+	msgChans map[int]chan interface{} // Message channels
 }
 
 func NewProducer(sqsConfig SQSConfig, logger *log.Log) *Producer {

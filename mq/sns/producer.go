@@ -28,20 +28,20 @@ type keyValueReq struct {
 	errCh chan error
 }
 
-// SNSConfig aws sns相关配置
+// SNSConfig AWS SNS related configuration
 type SNSConfig struct {
-	ARN         string `mapstructure:"arn" json:"arn"`                   // topic的arn
-	Region      string `mapstructure:"region" json:"region"`             // 队列服务所属区域
-	APIKey      string `mapstructure:"api_key" json:"api_key"`           // api key
-	SecretKey   string `mapstructure:"secret_key" json:"secret_key"`     // secret key
-	ProducerCnt int    `mapstructure:"producer_cnt" json:"producer_cnt"` // 生产者
+	ARN         string `mapstructure:"arn" json:"arn"`             // Topic ARN
+	Region      string `mapstructure:"region" json:"region"`       // Queue service region
+	APIKey      string `mapstructure:"api_key" json:"api_key"`     // API key
+	SecretKey   string `mapstructure:"secret_key" json:"secret_key"` // Secret key
+	ProducerCnt int    `mapstructure:"producer_cnt" json:"producer_cnt"` // Number of producers
 }
 
-// Producer 生产者
+// Producer Message producer
 type Producer struct {
-	config   SNSConfig                // 配置
-	logger   *log.Log                 // 日志
-	msgChans map[int]chan interface{} // 接收消息
+	config   SNSConfig                // Configuration
+	logger   *log.Log                 // Logger
+	msgChans map[int]chan interface{} // Message channels
 	isFifo   bool
 }
 

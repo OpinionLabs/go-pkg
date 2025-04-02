@@ -3,17 +3,17 @@ package go_pool
 import (
 	"log"
 	"time"
-	
+
 	"go.uber.org/atomic"
 )
 
-// 实现协程池, 用于提高事件处理并发度
+// Implementation of goroutine pool to improve event processing concurrency
 
 type Pool[T interface{}] struct {
-	running atomic.Int32  // 运行中的协程数
-	taskCh  chan T        // 事件
-	exitCh  chan struct{} // 关闭协程池
-	options options[T]    // 配置
+	running atomic.Int32  // Number of running goroutines
+	taskCh  chan T        // Event channel
+	exitCh  chan struct{} // Channel for closing goroutine pool
+	options options[T]    // Configuration
 }
 
 func NewPool[T interface{}](opts ...Option[T]) *Pool[T] {

@@ -11,7 +11,7 @@ type Option[T any] interface {
 	apply(*options[T])
 }
 
-// 连接池大小
+// Pool size
 type sizeOption[T any] int
 
 func (s sizeOption[T]) apply(o *options[T]) {
@@ -22,7 +22,7 @@ func WithSize[T any](size int) Option[T] {
 	return sizeOption[T](size)
 }
 
-// 连接池任务回调
+// Pool task callback
 type taskCBOption[T any] func(t T, i int)
 
 func (t taskCBOption[T]) apply(o *options[T]) {
@@ -33,7 +33,7 @@ func WithTaskCB[T any](taskCB func(t T, i int)) Option[T] {
 	return taskCBOption[T](taskCB)
 }
 
-// 连接池事后回调
+// Pool completion callback
 type doneCBOption[T any] func(t T, i int)
 
 func (e doneCBOption[T]) apply(o *options[T]) {
@@ -44,7 +44,7 @@ func WithDoneCB[T any](exitCB func(t T, i int)) Option[T] {
 	return doneCBOption[T](exitCB)
 }
 
-// 调试日志
+// Debug logging
 type debugOption[T any] bool
 
 func (d debugOption[T]) apply(o *options[T]) {

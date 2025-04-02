@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ChewZ-life/go-pkg/concurrency/go_pool"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -13,19 +14,18 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodbstreams/types"
 	"github.com/aws/smithy-go/logging"
 	"github.com/pkg/errors"
-	"github.com/ChewZ-life/go-pkg/concurrency/go_pool"
 )
 
 var _ Streams = (*streams)(nil)
 
-// Streams 封装aws dynamodbstreams的sdk, 一个表对应一个对象, 使用者可并发调用
+// Streams wraps aws dynamodbstreams sdk, one object corresponds to one table, can be called concurrently
 type Streams interface {
 	ListStreams(ctx context.Context, fromKey any, limit int) (items []Stream, lastKey any, err error)
 	DescribeStream(ctx context.Context, streamArn string, fromKey any, limit int) (items []StreamDescription, lastKey any, err error)
 	GetShardIterator(ctx context.Context, iteratorPut ShardIterator) (shardIterator any, err error)
 	GetRecords(ctx context.Context, shardIterator any, limit int) (items []any, err error)
 
-	// Exit 退出相关连接池
+	// Exit Close related connection pools
 	Exit()
 }
 
@@ -34,20 +34,20 @@ func NewStreams(cfg Config) Streams {
 		cfg: cfg,
 	}
 
-	// 初始化连接池
+	// Initialize connection pool
 	{
 		d.pool = go_pool.NewPool(
 			go_pool.WithSize[eventCB](cfg.PoolSize),
 			go_pool.WithTaskCB(func(cb eventCB, i int) {
-				cb() // 执行一下回调就可以
+				cb() // Execute callback
 			}),
 		)
 	}
 
-	// 初始化aws dynamodb客户端
+	// Initialize aws dynamodb client
 	{
-		//// 需要覆盖默认的http的客户端, 默认的配置会有time-wait过高问题, 原因参考下面的链接
-		//// http://tleyden.github.io/blog/2016/11/21/tuning-the-go-http-client-library-for-load-testing/
+		// Need to override default http client, default config has high time-wait issues
+		// Reference: http://tleyden.github.io/blog/2016/11/21/tuning-the-go-http-client-library-for-load-testing/
 		defaultRoundTripper := http.DefaultTransport
 		defaultTransportPointer, ok := defaultRoundTripper.(*http.Transport)
 		if !ok {
@@ -110,7 +110,7 @@ func (d *streams) listStreams(ctx context.Context, fromKey any, limit int) (item
 		if listFrom != "" {
 			listInput.ExclusiveStartStreamArn = aws.String(listFrom)
 		}
-		// 不带表名，可以获取所有流
+		// Without table name, can get all streams
 		if d.cfg.TableName != "" {
 			listInput.TableName = aws.String(d.cfg.TableName)
 		}
@@ -130,13 +130,13 @@ func (d *streams) listStreams(ctx context.Context, fromKey any, limit int) (item
 
 		lastKey = nil
 		if res.LastEvaluatedStreamArn == nil {
-			// 后面没有数据, 表示遍历完成
+			// No more data, iteration complete
 			break
 		}
 		lastKey = res.LastEvaluatedStreamArn
 
 		if len(items) >= limit {
-			// 已经取到想要的数据量, 退出循环
+			// Already got desired amount of data, exit loop
 			break
 		}
 		listFrom = aws.ToString(res.LastEvaluatedStreamArn)
@@ -199,13 +199,13 @@ func (d *streams) describeStream(ctx context.Context, streamArn string, fromKey 
 
 		lastKey = nil
 		if des.LastEvaluatedShardId == nil {
-			// 后面没有数据, 表示遍历完成
+			// No more data, iteration complete
 			break
 		}
 		lastKey = des.LastEvaluatedShardId
 
 		if len(items) >= limit {
-			// 已经取到想要的数据量, 退出循环
+			// Already got desired amount of data, exit loop
 			break
 		}
 		desFrom = aws.ToString(des.LastEvaluatedShardId)
@@ -229,7 +229,7 @@ func (d *streams) getShardIterator(ctx context.Context, iteratorPut ShardIterato
 		ShardId:           aws.String(iteratorPut.ShardId),
 		ShardIteratorType: types.ShardIteratorType(iteratorPut.ShardIteratorType),
 	}
-	// 没有该参数，会从头开始读取
+	// If no sequence number parameter, will start reading from beginning
 	if iteratorPut.SequenceNumber != "" {
 		shardInput.SequenceNumber = aws.String(iteratorPut.SequenceNumber)
 	}
@@ -275,12 +275,12 @@ func (d *streams) getRecords(ctx context.Context, shardIterator any, limit int) 
 		}
 
 		if records.NextShardIterator == nil {
-			// 后面没有数据, 表示遍历完成
+			// No more data, iteration complete
 			break
 		}
 
 		if len(items) >= limit {
-			// 已经取到想要的数据量, 退出循环
+			// Already got desired amount of data, exit loop
 			break
 		}
 		shardIterator = aws.ToString(records.NextShardIterator)

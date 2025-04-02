@@ -2,10 +2,10 @@ package httpclient
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
-	"log"
 )
 
 const (
@@ -26,7 +26,7 @@ func handleHttpRespErr(reqUrl string, tp time.Time, response *http.Response, err
 	}
 }
 
-// parseUrlResource 根据url解析资源名称,用于后续熔断
+// parseUrlResource Parse resource name from URL for circuit breaking
 func parseUrlResource(urlStr string) string {
 	urlInfo, err := url.ParseRequestURI(urlStr)
 	if err != nil {
@@ -42,7 +42,7 @@ func handleHttpOpt(cli *http.Client, opts ...Option) {
 	}
 
 	if len(opt.proxies) > 0 {
-		// 从代理列表里面随机选择一个
+		// Randomly select a proxy from the proxy list
 		rndIdx := time.Now().UnixNano() % int64(len(opt.proxies))
 		proxyUrl, err := url.Parse(opt.proxies[rndIdx])
 		if err == nil {
@@ -53,7 +53,7 @@ func handleHttpOpt(cli *http.Client, opts ...Option) {
 	}
 }
 
-// handleCtxDeadline 没有设置结束时间时,添加一个默认的3秒
+// handleCtxDeadline Add default 3-second timeout if no deadline is set
 func handleCtxDeadline(ctx context.Context) (context.Context, func()) {
 	_, ok := ctx.Deadline()
 	if ok {

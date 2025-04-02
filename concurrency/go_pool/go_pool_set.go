@@ -2,12 +2,12 @@ package go_pool
 
 import "fmt"
 
-// 含多个协程池, 每个协程池有一个标识符
+// Contains multiple goroutine pools, each with a unique identifier
 type PoolSet[T interface{}] struct {
 	nameToPool map[string]*Pool[T]
 }
 
-// 参数的key是连接池的标识, value是对应连接池的配置
+// Parameter key is the pool identifier, value is the corresponding pool configuration
 func NewPoolSet[T interface{}](poolSet map[string][]Option[T]) *PoolSet[T] {
 	ps := PoolSet[T]{
 		nameToPool: make(map[string]*Pool[T]),

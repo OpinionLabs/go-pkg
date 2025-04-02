@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestGetUpdateExpression_Case0 测试更新表达式获取
+// TestGetUpdateExpression_Case0 tests getting update expressions
 func TestGetUpdateExpression_Case0(t *testing.T) {
 	tests := []struct {
 		GivenSets        map[string]any

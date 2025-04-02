@@ -21,26 +21,26 @@ const (
 // MessageCB
 type MessageCB func(msg string) error
 
-// SQS aws sqs封装
+// SQS AWS SQS wrapper
 type SQS struct {
-	config    SQSConfig // 配置
-	logger    *log.Log  // 日志
-	messageCB MessageCB // 回调
+	config    SQSConfig
+	logger    *log.Log
+	messageCB MessageCB
 }
 
-// SQSConfig aws sqs相关配置
+// SQSConfig AWS SQS related configuration
 type SQSConfig struct {
-	ARN            string  `mapstructure:"arn" json:"arn"`               // topic的arn
-	Region         string  `mapstructure:"region" json:"region"`         // 队列服务所属区域
-	APIKey         string  `mapstructure:"api_key" json:"api_key"`       // api key
-	SecretKey      string  `mapstructure:"secret_key" json:"secret_key"` // secret key
-	QueueUrl       string  `mapstructure:"queue_url" json:"queue_url"`   // 队列地址
+	ARN            string  `mapstructure:"arn" json:"arn"`
+	Region         string  `mapstructure:"region" json:"region"`
+	APIKey         string  `mapstructure:"api_key" json:"api_key"`
+	SecretKey      string  `mapstructure:"secret_key" json:"secret_key"`
+	QueueUrl       string  `mapstructure:"queue_url" json:"queue_url"`
 	MessageGroupId *string `mapstructure:"message_group_id" json:"message_group_id"`
-	ConsumerCnt    int     `mapstructure:"consumer_cnt" json:"consumer_cnt"` // 消费者数量
-	ProducerCnt    int     `mapstructure:"producer_cnt" json:"producer_cnt"` // 生产者
+	ConsumerCnt    int     `mapstructure:"consumer_cnt" json:"consumer_cnt"`
+	ProducerCnt    int     `mapstructure:"producer_cnt" json:"producer_cnt"`
 }
 
-// 处理sns->sqs的消息
+// Process sns->sqs messages
 func NewSQS(sqsConfig SQSConfig, logger *log.Log, messageCB MessageCB) *SQS {
 	s := &SQS{
 		config:    sqsConfig,
@@ -55,7 +55,7 @@ func NewSQS(sqsConfig SQSConfig, logger *log.Log, messageCB MessageCB) *SQS {
 	return s
 }
 
-// 处理sqs->sqs的消息
+// Process sqs->sqs messages
 func NewSQSV1(sqsConfig SQSConfig, logger *log.Log, messageCB MessageCB) *SQS {
 	s := &SQS{
 		config:    sqsConfig,
@@ -106,7 +106,7 @@ func (s *SQS) processMessages(i int) {
 				service = sqs.New(cfgSession)
 			}
 
-			// 拉取消息
+			// Fetch messages
 			const waitSeconds = 20
 			const messageCount = 10
 			ctx, cancel := context.WithTimeout(context.Background(), (waitSeconds+1)*time.Second)
@@ -127,7 +127,7 @@ func (s *SQS) processMessages(i int) {
 				return
 			}
 
-			// 处理消息
+			// Process messages
 			var deleteEntries []*sqs.DeleteMessageBatchRequestEntry
 			for _, msg := range msgResult.Messages {
 				if msg.Body == nil {
@@ -139,7 +139,7 @@ func (s *SQS) processMessages(i int) {
 					Timestamp string `json:"Timestamp"`
 				}{}
 				if err = json.Unmarshal([]byte(*msg.Body), rawMessage); err != nil {
-					// 消息反序列化失败, 认为是错误的消息, 删除就好了
+					// If message deserialization fails, treat it as an invalid message and delete it
 					deleteEntries = append(deleteEntries, &sqs.DeleteMessageBatchRequestEntry{
 						Id:            msg.MessageId,
 						ReceiptHandle: msg.ReceiptHandle,
@@ -148,7 +148,7 @@ func (s *SQS) processMessages(i int) {
 					continue
 				}
 
-				// 结果的回调
+				// Process callback result
 				if s.messageCB != nil {
 					tp := time.Now()
 					err = s.messageCB(rawMessage.Message)
@@ -160,7 +160,7 @@ func (s *SQS) processMessages(i int) {
 					if cost > HandleTimeoutMS {
 						s.logger.ErrorWithFields("sqs SQS.processMessages handle msg cost.", log.Fields{"sqsArn": s.config.ARN, "cost": cost})
 					}
-					// 回调成功后删除消息
+					// Delete message after successful callback
 					deleteEntries = append(deleteEntries, &sqs.DeleteMessageBatchRequestEntry{
 						Id:            msg.MessageId,
 						ReceiptHandle: msg.ReceiptHandle,
@@ -172,7 +172,7 @@ func (s *SQS) processMessages(i int) {
 				return
 			}
 
-			// 删除消息
+			// Delete messages
 			ctx2, cancel2 := context.WithTimeout(context.Background(), time.Second)
 			defer cancel2()
 
@@ -223,7 +223,7 @@ func (s *SQS) processMessagesV1(i int) {
 				service = sqs.New(cfgSession)
 			}
 
-			// 拉取消息
+			// Fetch messages
 			const waitSeconds = 5
 			const messageCount = 10
 			ctx, cancel := context.WithTimeout(context.Background(), (waitSeconds+1)*time.Second)
@@ -248,7 +248,7 @@ func (s *SQS) processMessagesV1(i int) {
 
 			s.logger.InfoWithFields("sqs SQS.processMessagesV1 received messages", log.Fields{"len": len(msgResult.Messages)})
 
-			// 处理消息
+			// Process messages
 			var deleteEntries []*sqs.DeleteMessageBatchRequestEntry
 			for i, msg := range msgResult.Messages {
 				if msg.Body == nil {
@@ -257,7 +257,7 @@ func (s *SQS) processMessagesV1(i int) {
 
 				s.logger.InfoWithFields("sqs SQS.processMessagesV1 handle message", log.Fields{"index": i, "msg": *msg})
 
-				// 结果的回调
+				// Process callback result
 				if s.messageCB != nil {
 					tp := time.Now()
 					err = s.messageCB(*msg.Body)
@@ -269,7 +269,7 @@ func (s *SQS) processMessagesV1(i int) {
 					if cost > HandleTimeoutMS {
 						s.logger.ErrorWithFields("sqs SQS.processMessagesV1 handle msg cost.", log.Fields{"sqsArn": s.config.ARN, "cost": cost})
 					}
-					// 回调成功后删除消息
+					// Delete message after successful callback
 					deleteEntries = append(deleteEntries, &sqs.DeleteMessageBatchRequestEntry{
 						Id:            msg.MessageId,
 						ReceiptHandle: msg.ReceiptHandle,
@@ -281,7 +281,7 @@ func (s *SQS) processMessagesV1(i int) {
 				return
 			}
 
-			// 删除消息
+			// Delete messages
 			ctx2, cancel2 := context.WithTimeout(context.Background(), time.Second)
 			defer cancel2()
 

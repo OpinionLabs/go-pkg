@@ -8,7 +8,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ChewZ-life/go-pkg/concurrency/go_pool"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -16,48 +18,57 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/smithy-go/logging"
 	"github.com/pkg/errors"
-	"github.com/ChewZ-life/go-pkg/concurrency/go_pool"
-    "github.com/aws/aws-sdk-go-v2/aws/retry"
 )
 
 var _ Dynamo[struct{}] = (*dynamo[struct{}])(nil)
 
-// Dynamo 封装aws dynamodb的sdk, 一个表对应一个对象, 使用者可并发调用
+// Dynamo wraps aws dynamodb sdk, one object corresponds to one table, can be called concurrently
 type Dynamo[T any] interface {
-	// ScanTable 扫描全表, 从 fromKey 之后开始扫描, 扫描至少 limit 个数据, 返回数据 items 和最新扫描到的位置 lastKey
-	// fromKey 第一次调用填写nil, 后续填写Scan返回的最新位置. 扫描结果是无序的.
+	// ScanTable scans the entire table, starts scanning from fromKey, scans at least limit records
+	// For first call, set fromKey to nil, for subsequent calls use the lastKey from previous Scan
+	// Scan results are unordered
 	ScanTable(ctx context.Context, fromKey any, limit int) (items []T, lastKey any, err error)
-	// ScanIndex 扫描表的全部索引, 从 fromKey 之后开始扫描, 扫描至少 limit 个数据, 返回数据 items 和最新扫描到的位置 lastKey
-	// fromKey 第一次调用填写nil, 后续填写Scan返回的最新位置. 扫描结果是无序的.
+	// ScanIndex Scan all indexes of the table, start scanning from fromKey, scan at least limit records
+	// For first call, set fromKey to nil, for subsequent calls use the lastKey from previous Scan
+	// Scan results are unordered
 	ScanIndex(ctx context.Context, index string, fromKey any, limit int) (items []T, lastKey any, err error)
-	// QueryItem 查询单个记录, 参数 key 需要填写分区键和排序键字段的值, 分区键是必填的, 排序键可选的
+	// QueryItem Query a single record, parameter key needs to fill in partition key and sort key field values
+	// Partition key is required, sort key is optional
 	QueryItem(ctx context.Context, key map[string]any) (exist bool, retItem T, err error)
-	// QueryItems 查询满足条件的多条记录, 参数 key 需要填写分区键和排序键字段的值, 分区键是必填的, 排序键可选的
+	// QueryItems Query multiple records that meet conditions
+	// Parameter key needs to fill in partition key and sort key field values
+	// Partition key is required, sort key is optional
 	QueryItems(ctx context.Context, index, condition string, expression map[string]any, fromKey any, limit int) (items []T, lastKey any, err error)
-	// QueryItemWithTable 指定表，查询单个记录, 参数 key 需要填写分区键和排序键字段的值, 分区键是必填的, 排序键可选的
+	// QueryItemWithTable Query a single record with specified table
+	// Parameter key needs to fill in partition key and sort key field values
+	// Partition key is required, sort key is optional
 	QueryItemWithTable(ctx context.Context, key map[string]any, table string) (exist bool, retItem T, err error)
-	//QueryItemsWithTable 指定表，查询满足条件的多条记录, 参数 key 需要填写分区键和排序键字段的值, 分区键是必填的, 排序键可选的
+	// QueryItemsWithTable Query multiple records that meet the conditions with specified table. 
+	// The parameter 'key' needs to fill in the values of partition key and sort key fields. 
+	// Partition key is required, sort key is optional.
 	QueryItemsWithTable(ctx context.Context, qcs QueryItemCondition) (items []T, lastKey any, err error)
 
-	// InsertItems 批量写入一批记录, 每次最多写入25条记录
+	// InsertItems Batch write a set of records, maximum 25 records per write
 	InsertItems(ctx context.Context, items []InsertInfo[T]) (err error)
-	// TxInsertItems 批量写入一批记录, 使用事务的方式执行
+	// TxInsertItems Batch write a set of records using transaction
 	TxInsertItems(ctx context.Context, items []TxInsertInfo[T], opts ...Option) (err error)
-	// DeleteItems 批量删除一批记录, 每次最多删除25条记录
+	// DeleteItems Batch delete a set of records, maximum 25 records per deletion
 	DeleteItems(ctx context.Context, keys []map[string]any) (err error)
-	// UpdateItem 更新单个记录, key包含分区键和排序键, updates包含更新的属性, deletes包含删除的属性
+	// UpdateItem Update a single record, key contains partition key and sort key, 
+	// updates contains attributes to update, deletes contains attributes to delete
 	UpdateItem(ctx context.Context, update UpdateInfo) (err error)
-	// UpdateItems 更新一批记录, 内部并发调用UpdateItem
+	// UpdateItems Update a batch of records, calls UpdateItem concurrently internally
 	UpdateItems(ctx context.Context, updates []UpdateInfo) (succKeys []map[string]any, err error)
-	// TxUpdateItems 使用事务更新多个记录, key包含分区键和排序键, updates包含更新的属性, deletes包含删除的属性
+	// TxUpdateItems Update multiple records using transaction, key contains partition key and sort key,
+	// updates contains attributes to update, deletes contains attributes to delete
 	TxUpdateItems(ctx context.Context, updates []UpdateInfo, opts ...Option) (err error)
-	// TxRawExec 一些定制化事务，例如多表事务
+	// TxRawExec Custom transactions, such as multi-table transactions
 	TxRawExec(ctx context.Context, insertItems []TxRawInsert, updateItems []TxRawUpdate, opts ...Option) (err error)
 
-	// 用于单元测试
+	// For unit testing
 	CreateTable(ctx context.Context, input *dynamodb.CreateTableInput) (output *dynamodb.CreateTableOutput, err error)
 	DeleteTable(ctx context.Context, input *dynamodb.DeleteTableInput) (output *dynamodb.DeleteTableOutput, err error)
-	// Exit 退出相关连接池
+	// Exit Close related connection pools
 	Exit()
 }
 
@@ -77,17 +88,17 @@ func NewDynamo[T any](cfg Config) Dynamo[T] {
 		cfg: cfg,
 	}
 
-	// 初始化连接池
+	// Initialize connection pool
 	{
 		d.pool = go_pool.NewPool(
 			go_pool.WithSize[eventCB](cfg.PoolSize),
 			go_pool.WithTaskCB(func(cb eventCB, i int) {
-				cb() // 执行一下回调就可以
+				cb() // Execute callback
 			}),
 		)
 	}
 
-	// 初始化aws dynamodb客户端
+	// Initialize aws dynamodb client
 	{
 		//var sess *session.Session
 		var err error
@@ -109,8 +120,8 @@ func NewDynamo[T any](cfg Config) Dynamo[T] {
 			log.Fatal("NewDynamo new session fail, err:", err)
 		}
 
-		//// 需要覆盖默认的http的客户端, 默认的配置会有time-wait过高问题, 原因参考下面的链接
-		//// http://tleyden.github.io/blog/2016/11/21/tuning-the-go-http-client-library-for-load-testing/
+		// Need to override default http client, default config has high time-wait issues
+		// Reference: http://tleyden.github.io/blog/2016/11/21/tuning-the-go-http-client-library-for-load-testing/
 		defaultRoundTripper := http.DefaultTransport
 		defaultTransportPointer, ok := defaultRoundTripper.(*http.Transport)
 		if !ok {
@@ -133,10 +144,10 @@ func NewDynamo[T any](cfg Config) Dynamo[T] {
 			options.HTTPClient = &http.Client{Transport: &defaultTransport}
 			return nil
 			},
-        	// 配置重试策略
+        	// Configure retry strategy
         	config.WithRetryer(func() aws.Retryer {
             	return retry.NewStandard(func(o *retry.StandardOptions) {
-                	o.MaxAttempts = 3 // 设置最大重试次数
+                	o.MaxAttempts = 3 // Set maximum retry attempts
             	})
         	}),
 		)
@@ -181,15 +192,14 @@ func (d *dynamo[T]) scan(ctx context.Context, index string, fromKey any, limit i
 
 	for {
 		scanInput := &dynamodb.ScanInput{
-			ConsistentRead:    aws.Bool(true), // 目前的场景, 只考虑一致性读, 读业务部使用nosql
+			ConsistentRead:    aws.Bool(true), // For current scenarios, only consider consistent reads, read business does not use nosql
 			ExclusiveStartKey: scanFrom,
 			Limit:             aws.Int32(int32(limit)),
 			TableName:         aws.String(d.cfg.TableName),
 		}
 		if index != "" {
-			// 扫描索引表
+			// Scan index table
 			scanInput.IndexName = aws.String(index)
-
 		}
 		res, err := d.svc.Scan(ctx, scanInput)
 		if err != nil {
@@ -207,13 +217,13 @@ func (d *dynamo[T]) scan(ctx context.Context, index string, fromKey any, limit i
 
 		lastKey = nil
 		if len(res.LastEvaluatedKey) == 0 {
-			// 后面没有数据, 表示遍历完成
+			// No more data, iteration complete
 			break
 		}
 		lastKey = res.LastEvaluatedKey
 
 		if len(items) >= limit {
-			// 已经取到想要的数据量, 退出循环
+			// Already got desired amount of data, exit loop
 			break
 		}
 		scanFrom = res.LastEvaluatedKey
@@ -336,16 +346,15 @@ func (d *dynamo[T]) queryItems(ctx context.Context, index string, condition stri
 		}
 		queryInput := &dynamodb.QueryInput{
 			TableName:                 aws.String(d.cfg.TableName),
-			ConsistentRead:            aws.Bool(false), // 扫描数据较多，不宜使用强一致性
+			ConsistentRead:            aws.Bool(false), // Not suitable to use strong consistency when scanning large amounts of data
 			ExclusiveStartKey:         queryFrom,
 			KeyConditionExpression:    aws.String(condition),
 			ExpressionAttributeValues: attributeValues,
 			Limit:                     aws.Int32(int32(limit)),
 		}
 		if index != "" {
-			// 扫描索引表
+			// Scan index table
 			queryInput.IndexName = aws.String(index)
-
 		}
 		res, err := d.svc.Query(ctx, queryInput)
 		if err != nil {
@@ -363,13 +372,13 @@ func (d *dynamo[T]) queryItems(ctx context.Context, index string, condition stri
 
 		lastKey = nil
 		if len(res.LastEvaluatedKey) == 0 {
-			// 后面没有数据, 表示遍历完成
+			// No more data, iteration complete
 			break
 		}
 		lastKey = res.LastEvaluatedKey
 
 		if len(items) >= limit {
-			// 已经取到想要的数据量, 退出循环
+			// Already got desired amount of data, exit loop
 			break
 		}
 		queryFrom = res.LastEvaluatedKey
@@ -450,16 +459,15 @@ func (d *dynamo[T]) queryItemsWithTable(ctx context.Context, qc QueryItemConditi
 		}
 		queryInput := &dynamodb.QueryInput{
 			TableName:                 aws.String(qc.TableName),
-			ConsistentRead:            aws.Bool(false), // 扫描数据较多，不宜使用强一致性
+			ConsistentRead:            aws.Bool(false), // Not suitable to use strong consistency when scanning large amounts of data
 			ExclusiveStartKey:         queryFrom,
 			KeyConditionExpression:    aws.String(qc.Condition),
 			ExpressionAttributeValues: attributeValues,
 			Limit:                     aws.Int32(int32(qc.Limit)),
 		}
 		if qc.Index != "" {
-			// 扫描索引表
+			// Scan index table
 			queryInput.IndexName = aws.String(qc.Index)
-
 		}
 		res, err := d.svc.Query(ctx, queryInput)
 		if err != nil {
@@ -477,13 +485,13 @@ func (d *dynamo[T]) queryItemsWithTable(ctx context.Context, qc QueryItemConditi
 
 		lastKey = nil
 		if len(res.LastEvaluatedKey) == 0 {
-			// 后面没有数据, 表示遍历完成
+			// No more data, iteration complete
 			break
 		}
 		lastKey = res.LastEvaluatedKey
 
 		if len(items) >= qc.Limit {
-			// 已经取到想要的数据量, 退出循环
+			// Already got desired amount of data, exit loop
 			break
 		}
 		queryFrom = res.LastEvaluatedKey
@@ -559,7 +567,7 @@ func (d *dynamo[T]) insertItems(ctx context.Context, insertInfos []InsertInfo[T]
 	return <-errCh
 }
 
-// insertInfos 不能超过100个，否则dynamodb会报错
+// insertInfos cannot exceed 100, otherwise dynamodb will report an error
 func (d *dynamo[T]) TxInsertItems(ctx context.Context, insertInfos []TxInsertInfo[T], opts ...Option) (err error) {
 	if len(insertInfos) > 100 {
 		return errors.New("insertInfos must have length less than or equal to 100")
@@ -625,7 +633,7 @@ func (d *dynamo[T]) txInsertItems(ctx context.Context, insertInfos []TxInsertInf
 		}
 		items = append(items, tx)
 	}
-	// items 最多仅支持100个
+	// Maximum 100 items supported
 	input := dynamodb.TransactWriteItemsInput{
 		TransactItems: items,
 	}
@@ -639,7 +647,7 @@ func (d *dynamo[T]) txInsertItems(ctx context.Context, insertInfos []TxInsertInf
 	return err
 }
 
-// insertItems和updateItems 数量总和不能超过100个，否则dynamodb会报错
+// insertItems and updateItems total cannot exceed 100, otherwise dynamodb will report an error
 func (d *dynamo[T]) TxRawExec(ctx context.Context, insertItems []TxRawInsert, updateItems []TxRawUpdate, opts ...Option) (err error) {
 	if len(insertItems)+len(updateItems) > 100 {
 		return errors.New("insertItems and updateItems must have length less than or equal to 100")
@@ -715,7 +723,7 @@ func (d *dynamo[T]) txRawExec(ctx context.Context, insertItems []TxRawInsert, up
 		items = append(items, tx)
 	}
 
-	// items 最多仅支持100个
+	// Maximum 100 items supported
 	input := dynamodb.TransactWriteItemsInput{
 		TransactItems: items,
 	}
@@ -810,7 +818,7 @@ func (d *dynamo[T]) UpdateItem(ctx context.Context, update UpdateInfo) (err erro
 func (d *dynamo[T]) UpdateItems(ctx context.Context, updates []UpdateInfo) (succKeys []map[string]any, err error) {
 	resCh := make(chan interface{}, len(updates))
 	{
-		// 并发调用更新请求
+		// Concurrent update requests
 		wg := sync.WaitGroup{}
 		for i := range updates {
 			wg.Add(1)
@@ -832,15 +840,15 @@ func (d *dynamo[T]) UpdateItems(ctx context.Context, updates []UpdateInfo) (succ
 	for {
 		e, ok := <-resCh
 		if !ok {
-			// 所有请求结果处理完成
+			// All request results processed
 			break
 		}
 		if err, ok := e.(error); ok {
-			// 请求失败
+			// Request failed
 			msgs = append(msgs, err.Error())
 			continue
 		}
-		// 请求成功
+		// Request succeeded
 		succKeys = append(succKeys, e.(map[string]any))
 	}
 
@@ -850,7 +858,7 @@ func (d *dynamo[T]) UpdateItems(ctx context.Context, updates []UpdateInfo) (succ
 	return
 }
 
-// updates 不能超过100个，否则dynamodb会报错
+// updates cannot exceed 100, otherwise dynamodb will report an error
 func (d *dynamo[T]) TxUpdateItems(ctx context.Context, updates []UpdateInfo, opts ...Option) (err error) {
 	if len(updates) > 100 {
 		return errors.New("updates must have length less than or equal to 100")
@@ -880,7 +888,7 @@ func (d *dynamo[T]) txUpdateItems(ctx context.Context, updates []UpdateInfo, opt
 		}
 		items = append(items, tx)
 	}
-	// items 最多仅支持100个
+	// Maximum 100 items supported
 	input := &dynamodb.TransactWriteItemsInput{
 		TransactItems:          items,
 		ReturnConsumedCapacity: types.ReturnConsumedCapacityTotal,

@@ -35,12 +35,12 @@ func consumedInfo(cs []types.ConsumedCapacity) string {
 	return strings.Join(details, " ; ")
 }
 
-// getUpdateExpression 获取更新表达式, 参数说明
+// getUpdateExpression gets the update expression, parameter description:
 //
-//	sets:    需要更新的属性集合
-//	removes: 需要删除的属性集合
-//	names:   更新表达式里面的 名字占位符 到 属性名的映射
-//	values:  更新表达式里面的 值占位符 到 属性值的映射
+//  sets:    collection of attributes to update
+//  removes: collection of attributes to delete
+//  names:   mapping from name placeholders to attribute names in update expression
+//  values:  mapping from value placeholders to attribute values in update expression
 func getUpdateExpression(sets, removes map[string]any, names map[string]string, values map[string]any) string {
 	setExpression := ""
 	index := 1
@@ -82,11 +82,11 @@ func getUpdateExpression(sets, removes map[string]any, names map[string]string, 
 	return updateExpression
 }
 
-// getConditionExpression 获取更新表达式
+// getConditionExpression gets the condition expression
 func getConditionExpression(conditions Conditions, names map[string]string, values map[string]any) string {
 	var conds []string
 
-	// 属性存在的条件
+	// Check conditions for attribute existence
 	if len(conditions.AttributeExists) > 0 {
 		index := 1
 		for attrName := range conditions.AttributeExists {
@@ -97,7 +97,7 @@ func getConditionExpression(conditions Conditions, names map[string]string, valu
 		}
 	}
 
-	// 属性不存在的条件
+	// Check conditions for attribute non-existence
 	if len(conditions.AttributeNotExists) > 0 {
 		index := 1
 		for attrName := range conditions.AttributeNotExists {
@@ -108,7 +108,7 @@ func getConditionExpression(conditions Conditions, names map[string]string, valu
 		}
 	}
 
-	// 属性相等的条件
+	// Check conditions for attribute equality
 	if len(conditions.AttributeEqual) > 0 {
 		index := 1
 		for attrName, attrVal := range conditions.AttributeEqual {
@@ -121,7 +121,7 @@ func getConditionExpression(conditions Conditions, names map[string]string, valu
 		}
 	}
 
-	// 属性不存在 或 存在但等于某个值
+	// Check conditions for attribute non-existence or equality
 	if len(conditions.AttributeNotExistsOrEqual) > 0 {
 		index := 1
 		for attrName, attrVal := range conditions.AttributeNotExistsOrEqual {
@@ -137,9 +137,9 @@ func getConditionExpression(conditions Conditions, names map[string]string, valu
 	return strings.Join(conds, " and ")
 }
 
-// // isIdempotentErr err是否表示幂等请求重复
+// // isIdempotentErr checks if the error indicates an idempotent request duplication
 // func isIdempotentErr(err error) bool {
-// 	return false // 先去掉幂等判断
+// 	return false // Temporarily disable idempotency check
 // 	opErr, ok := err.(*smithy.OperationError)
 // 	if !ok {
 // 		return false
@@ -157,7 +157,7 @@ func IsEqual(f1, f2 float64) bool {
 	return math.Abs(f1-f2) < MIN
 }
 
-// 值太小时, dynamodb也会报错, 这里特殊处理下小值
+// Handle small values, as dynamodb reports errors for very small values
 func Float64(f float64) float64 {
 	if math.IsNaN(f) {
 		return 0.0
@@ -171,13 +171,15 @@ func Float64(f float64) float64 {
 	return f
 }
 
-// KvSetsFromItem 将item里面包含的字段填充到sets里面, item必须是一个结构体, key使用item里面的dynamodbav
+// KvSetsFromItem fills fields from item into sets
+// item must be a struct
+// key uses dynamodbav tag from item
 func KvSetsFromItem(keys, sets map[string]interface{}, item interface{}) error {
 	oldLen := len(sets)
 	typ := reflect.TypeOf(item)
 	val := reflect.ValueOf(item)
 	if typ.Kind() != reflect.Struct {
-		// 不是结构体, 则直接返回
+		// Not a struct, return directly
 		return fmt.Errorf("item is not struct, %+v", item)
 	}
 	for i := 0; i < val.NumField(); i++ {
@@ -187,17 +189,17 @@ func KvSetsFromItem(keys, sets map[string]interface{}, item interface{}) error {
 			continue
 		}
 		if _, ok := keys[key]; ok {
-			// 分区键和排序键需要过滤掉
+			// Filter out partition key and sort key
 			continue
 		}
 
 		val := val.Field(i)
 		if val.Kind() == reflect.Float64 {
-			// 防止浮点数过小, 触发dynamodb的一些限制bug
+			// Prevent floating point numbers from being too small and triggering dynamodb limitation bugs
 			val := Float64(val.Interface().(float64))
 			sets[key] = val
 		} else {
-			// 其他类型的字段
+			// Other field types
 			sets[key] = val.Interface()
 		}
 	}

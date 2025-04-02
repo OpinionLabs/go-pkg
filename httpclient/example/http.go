@@ -1,19 +1,20 @@
 package main
 
 import (
-    "strconv"
-    "fmt"
-   	"context"
-    "net/url"
-	"github.com/shopspring/decimal"
+	"context"
+	"fmt"
+	"net/url"
+	"strconv"
+
 	"github.com/ChewZ-life/go-pkg/httpclient"
+	"github.com/shopspring/decimal"
 )
 
 
 type klineResp struct {
 	Errno  int      `json:"errno"`
 	Errmsg string   `json:"errmsg"`
-	Result klineRet `json:"result,omitempty"` // Result解析为result,忽略空值
+	Result klineRet `json:"result,omitempty"`
 }
 
 type klineRet struct {

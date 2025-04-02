@@ -3,30 +3,29 @@ package proto
 type SNSEventDataType string
 
 const (
-	// SNSEventDataTypePositionOpen 开仓事件
+	// SNSEventDataTypePositionOpen Position opening event
 	SNSEventDataTypePositionOpen SNSEventDataType = "positionOpen"
-	// SNSEventDataTypePositionUpdate 仓位更新, 20220321新增: 支持跟单
+	// SNSEventDataTypePositionUpdate Position update, added 20220321: supports copy trading
 	SNSEventDataTypePositionUpdate SNSEventDataType = "positionUpdate"
-	// SNSEventDataTypePositionClose 平仓事件
+	// SNSEventDataTypePositionClose Position closing event
 	SNSEventDataTypePositionClose SNSEventDataType = "positionClose"
-	// SNSEventDataTypeOrderNew 新的限价单事件
+	// SNSEventDataTypeOrderNew New limit order event
 	SNSEventDataTypeOrderNew SNSEventDataType = "orderNew"
-	// SNSEventDataTypeOrderFill 限价单成交事件
+	// SNSEventDataTypeOrderFill Limit order fill event
 	SNSEventDataTypeOrderFill SNSEventDataType = "orderFill"
-	// SNSEventDataTypeOrderCancel 限价单撤销事件
+	// SNSEventDataTypeOrderCancel Limit order cancellation event
 	SNSEventDataTypeOrderCancel SNSEventDataType = "orderCancel"
-	// SNSEventDataTypeOrderUpdate 
+	// SNSEventDataTypeOrderUpdate Order update event
 	SNSEventDataTypeOrderUpdate SNSEventDataType = "orderUpdate"
-
 )
 
-// SNSEventMessage aws sns发送通知事件消息格式
+// SNSEventMessage AWS SNS notification event message format
 type SNSEventMessage struct {
-	WalletAddress       string `json:"wallet_address"`  // 请求唯一id
-	WalletUser      	string `json:"wallet_user"`     // 请求用户id
-	DataType 			string `json:"dataType"` 		// 事件类型
-	Data     			string `json:"data"`     		// 数据结构体
-	Time     			int64  `json:"time"`     		// 毫秒时间戳
+	WalletAddress       string `json:"wallet_address"`  // Unique request ID
+	WalletUser      	string `json:"wallet_user"`     // Request user ID
+	DataType 			string `json:"dataType"` 		// Event type
+	Data     			string `json:"data"`     		// Data structure
+	Time     			int64  `json:"time"`     		// Timestamp in milliseconds
 }
 
 type SQSMsg struct {

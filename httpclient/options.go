@@ -5,7 +5,7 @@ type Option interface {
 }
 
 type httpClientOptions struct {
-	proxies []string // http使用的代理, 元素格式是http://host:port
+	proxies []string // http://host:port
 }
 
 type proxiesOption []string

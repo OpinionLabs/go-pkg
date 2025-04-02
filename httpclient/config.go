@@ -1,6 +1,6 @@
 package httpclient
 
-// HTTPCliConfig HTTP客户端的配置
+// HTTPCliConfig HTTP client configuration
 type HTTPCliConfig struct {
-	Address string `mapstructure:"address"` // 服务地址
+	Address string `mapstructure:"address"` // Service address
 }

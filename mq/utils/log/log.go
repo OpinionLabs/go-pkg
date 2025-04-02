@@ -19,8 +19,8 @@ type Log struct {
 	logName          string
 	logModule        string
 	logLevel         string
-	logRotationTime  int  // 日志文件分割频率，单位：小时
-	logRotationCount uint // 日志文件保存个数
+	logRotationTime  int  // Log file rotation frequency in hours
+	logRotationCount uint // Number of log files to keep
 }
 
 type Option func(log *Log) error
@@ -34,13 +34,14 @@ func NewLog(name, logModule, tgBotToken string, tgChatId int64, options ...Optio
 	}
 	instance.tgChatId = tgChatId
 
-	// 设置默认值
+	// Set default values
 	instance.log = logrus.New()
 	instance.logDir = "./logs"
 	instance.logRotationTime = 1
 	instance.logRotationCount = 24
 	instance.log.SetOutput(os.Stdout)
-	// 设置可选
+
+	// Set optional parameters
 	for _, option := range options {
 		if err := option(instance); err != nil {
 			return nil, err
@@ -55,7 +56,7 @@ func NewLog(name, logModule, tgBotToken string, tgChatId int64, options ...Optio
 }
 
 /*
-SetLogDir 设置日志目录
+SetLogDir sets the log directory
 */
 func SetLogDir(dir string) Option {
 	return func(log *Log) error {
@@ -65,7 +66,7 @@ func SetLogDir(dir string) Option {
 }
 
 /*
-SetLogRotation 设置日志分割频率，及日志文件保存个数
+SetLogRotation sets the log rotation frequency and number of log files to keep
 */
 func SetLogRotation(time int, count uint) Option {
 	return func(log *Log) error {
@@ -87,7 +88,7 @@ var logLevels = map[string]logrus.Level{
 	"DebugLevel": logrus.DebugLevel,
 }
 
-// 不将日志记录到控制台
+// Do not record logs to console
 type NilWriter struct {
 }
 
@@ -95,7 +96,7 @@ func (w *NilWriter) Write(p []byte) (n int, err error) {
 	return 0, nil
 }
 
-// 封装logrus.Fields
+// Wrapper for logrus.Fields
 type Fields logrus.Fields
 
 func (log *Log) SetLogLevel(level string) {
@@ -113,7 +114,7 @@ func (log *Log) Debug(args ...interface{}) {
 	entry.Debug(args...)
 }
 
-// 带有field的Debug
+// Debug with fields
 func (log *Log) DebugWithFields(l interface{}, f Fields) {
 	entry := log.log.WithFields(logrus.Fields(f))
 	entry.Data["file"] = log.fileInfo(2)
@@ -136,7 +137,7 @@ func (log *Log) Infof(format string, args ...interface{}) {
 	entry.Infof(format, args...)
 }
 
-// 带有field的Info
+// Info with fields
 func (log *Log) InfoWithFields(l interface{}, f Fields) {
 	entry := log.log.WithFields(logrus.Fields(f))
 	entry.Data["file"] = log.fileInfo(2)
@@ -151,7 +152,7 @@ func (log *Log) Warn(args ...interface{}) {
 	entry.Warn(args...)
 }
 
-// 带有Field的Warn
+// Warn with fields
 func (log *Log) WarnWithFields(l interface{}, f Fields) {
 	entry := log.log.WithFields(logrus.Fields(f))
 	entry.Data["file"] = log.fileInfo(2)
@@ -167,7 +168,7 @@ func (log *Log) Error(args ...interface{}) {
 	log.SendToTG("ERROR", args, nil)
 }
 
-// 带有Fields的Error
+// Error with fields
 func (log *Log) ErrorWithFields(l interface{}, f Fields) {
 	entry := log.log.WithFields(logrus.Fields(f))
 	entry.Data["file"] = log.fileInfo(2)
@@ -184,7 +185,7 @@ func (log *Log) Fatal(args ...interface{}) {
 	entry.Fatal(args...)
 }
 
-// 带有Field的Fatal
+// Fatal with fields
 func (log *Log) FatalWithFields(l interface{}, f Fields) {
 	entry := log.log.WithFields(logrus.Fields(f))
 	entry.Data["file"] = log.fileInfo(2)
@@ -203,7 +204,7 @@ func (log *Log) Panic(args ...interface{}) {
 	entry.Panic(args...)
 }
 
-// 带有Field的Panic
+// Panic with fields
 func (log *Log) PanicWithFields(l interface{}, f Fields) {
 	entry := log.log.WithFields(logrus.Fields(f))
 	entry.Data["file"] = log.fileInfo(2)

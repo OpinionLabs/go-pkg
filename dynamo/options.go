@@ -1,7 +1,7 @@
 package dynamo
 
 type options struct {
-	txID string // 用于作为幂等的id
+	txID string // Used as idempotency ID
 }
 
 type Option interface {
