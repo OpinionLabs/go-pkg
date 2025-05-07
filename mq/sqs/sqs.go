@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	HandleTimeoutMS = int64(1000)
+	HandleTimeoutMS = int64(10000)
 )
 
 // MessageCB
