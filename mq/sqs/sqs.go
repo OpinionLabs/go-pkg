@@ -246,16 +246,16 @@ func (s *SQS) processMessagesV1(i int) {
 				return
 			}
 
-			s.logger.InfoWithFields("sqs SQS.processMessagesV1 received messages", log.Fields{"len": len(msgResult.Messages)})
+			// s.logger.InfoWithFields("sqs SQS.processMessagesV1 received messages", log.Fields{"len": len(msgResult.Messages)})
 
 			// Process messages
 			var deleteEntries []*sqs.DeleteMessageBatchRequestEntry
-			for i, msg := range msgResult.Messages {
+			for _, msg := range msgResult.Messages {
 				if msg.Body == nil {
 					continue
 				}
 
-				s.logger.InfoWithFields("sqs SQS.processMessagesV1 handle message", log.Fields{"index": i, "msg": *msg})
+				// s.logger.InfoWithFields("sqs SQS.processMessagesV1 handle message", log.Fields{"index": i, "msg": *msg})
 
 				// Process callback result
 				if s.messageCB != nil {
